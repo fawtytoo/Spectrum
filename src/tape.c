@@ -387,83 +387,110 @@ int TAPE_FastSpeed()
 }
 
 // fast loading/saving ---------------------------------------------------------
-void MEM_Direct(WORD, BYTE *, int);
+#include "bus.h"
 
-int TAPE_FastLoad(BYTE type, WORD address, WORD length)
+static BYTE     tapeRom[0x4000] =
 {
-    int     match = 0;
+    [0 ... 0x04bf] = 0,
+    0x00, 0x00, 0xcd, 0xc6, 0x04, 0xc9, 0x4f, 0x7b, 0xd3, 0x7f, 0x7a, 0xd3, 0x7f, 0x79, 0xd3, 0x7f,
+    0xdd, 0x7e, 0x00, 0xd3, 0x7f, 0xa9, 0x4f, 0xdd, 0x23, 0x1b, 0x7a, 0xb3, 0x20, 0xf2, 0x79, 0xd3,
+    0x7f, 0x37, 0xc9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    [0x04f0 ... 0x054f] = 0,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x08, 0x15, 0xf3, 0x21, 0x3f, 0x05, 0xe5, 0xdb, 0xfe,
+    0xbf, 0xc0, 0x08, 0xd0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xcd, 0x70, 0x05, 0xc9,
+    0x4f, 0xdb, 0x7f, 0xa9, 0xc0, 0xdb, 0x7f, 0xdd, 0x77, 0x00, 0xa9, 0x4f, 0xdd, 0x23, 0x1b, 0x7a,
+    0xb3, 0x20, 0xf2, 0xdb, 0x7f, 0xa9, 0xc0, 0x37, 0xc9
+};
 
-    if (TAPE_Ended())
-    {
-        return 0;
-    }
+void TAPE_Cycle()
+{
+    static int      ff[3] = {0, 0};
+    static BYTE     size[2];
 
-    if (*curBlock->data == type && curBlock->length - 2 == length)
+    BUS_ROMCS &= (!(BUS_RESET | ff[1]));
+    ff[0] &= BUS_ROMCS;
+    ff[1] &= BUS_ROMCS;
+
+    if (BUS_MREQ && BUS_RD && (!BUS_A15) && (!BUS_A14))
     {
-        for (curBlock->pos = curBlock->data + 1; length != 0; length--, address++, curBlock->pos++)
+        if ((!ff[0]) && tapeFastSpeed && BUS_M1)
         {
-            MEM_Direct(address, curBlock->pos, 1);
+            if (busAddress == 0x0556 || busAddress == 0x056c)
+            {
+                curBlock->pos = curBlock->data;
+            }
+            else if (busAddress == 0x04c2)
+            {
+                if (tapeReadOnly == TRUE)
+                {
+                    SYS_Print("\nUnable to save data");
+                    SYS_Print(" Tape either read only or corrupt");
+                    SYS_Print(" Saving to audio output only");
+                    return;
+                }
+
+                SYS_Print("\nSaving data to tape ...");
+                ff[2] = 0;
+            }
+            else
+            {
+                return;
+            }
+
+            ff[0] = 1;
+            BUS_ROMCS = 1;
         }
+        if (ff[0])
+        {
+            busDataOut = tapeRom[busAddress];
+            busState = LOW;
 
-        match = 1;
+            if (busAddress == 0x04c5)
+            {
+                FILE_Write(curBlock->data, curBlock->length);
+                ff[2] = 0;
+            }
+            else if (busAddress == 0x056f)
+            {
+                if (curBlock->index > 0)
+                {
+                    curBlock = curBlock->next;
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            ff[0] = 0;
+            ff[1] = 1;
+        }
     }
 
-    curBlock = curBlock->next;
-
-    return match;
-}
-
-static void SaveBlock(BLOCK *block, BYTE type, WORD address, WORD length)
-{
-    int     count;
-
-    *block->pos++ = type;
-    block->id = type & 128 ? 1 : 0;
-
-    for (block->checksum = type; length != 0; length--, address++, block->pos++)
+    if (ff[0] && BUS_IORQ && BUS_RD && (!BUS_A7))
     {
-        MEM_Direct(address, block->pos, 0);
-        block->checksum ^= *block->pos;
+        if (curBlock->index > 0 && curBlock->pos < curBlock->end)
+        {
+            busDataOut &= *curBlock->pos++;
+            busState = LOW;
+        }
     }
 
-    *block->pos = block->checksum;
-    block->checksum ^= block->checksum;
-
-    GetTapeText(block);
-
-    count = BLOCKCOUNT;
-    if ((count % 10) == 9)
+    if (ff[0] && BUS_IORQ && BUS_WR && (!BUS_A7))
     {
-        count++;
+        if (ff[2] < 2)
+        {
+            size[ff[2]] = busDataIn;
+            ff[2]++;
+            if (ff[2] == 2)
+            {
+                curBlock = NewBlock(LE16(size) + 2);
+                SYS_Print(" Data length %i", LE16(size));
+            }
+        }
+        else if (curBlock->index > 0 && curBlock->pos < curBlock->end)
+        {
+            *curBlock->pos++ = busDataIn;
+        }
     }
-    OUTPUT(block, Digit(count, 1));
-}
-
-void TAPE_FastSave(WORD header, WORD data)
-{
-    BLOCK       *block[2];
-    WORD        length;
-    BYTE        byte[2];
-
-    if (tapeReadOnly == TRUE)
-    {
-        SYS_Print("\nUnable to save data");
-        SYS_Print(" Tape either read only or corrupt");
-        return;
-    }
-
-    SYS_Print("\nSaving data to tape ...");
-
-    block[0] = NewBlock(17 + 2);
-    SaveBlock(block[0], 0x00, header, 17);
-
-    MEM_Direct(header + 11, &byte[0], 0);
-    MEM_Direct(header + 12, &byte[1], 0);
-    length = LE16(byte);
-
-    block[1] = NewBlock(length + 2);
-    SaveBlock(block[1], 0xff, data, length);
-
-    FILE_Write(block[0]->data, block[0]->length);
-    FILE_Write(block[1]->data, block[1]->length);
 }

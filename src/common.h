@@ -30,8 +30,6 @@ extern WORD     cpuAddress;
 extern BYTE     cpuData;
 
 void CPU_Cycle(void);
-void ROM_LdBytes(void);
-void ROM_SaContrl(void);
 
 // ULA -------------------------------------------------------------------------
 extern WORD     ulaAddress;

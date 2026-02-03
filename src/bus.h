@@ -58,19 +58,25 @@
 #define BUSPIN_A9           29 + 27 //  ->
 #define BUSPIN_A11          28 + 28 //  ->
 
+#define BUS_A15             busPin[BUSPIN_A15 - 1]
+#define BUS_MREQ            busPin[BUSPIN_MREQ - 1]
 #define BUS_IORQ            busPin[BUSPIN_IORQ - 1]
 #define BUS_RD              busPin[BUSPIN_RD - 1]
+#define BUS_WR              busPin[BUSPIN_WR - 1]
 #define BUS_M1              busPin[BUSPIN_M1 - 1]
+#define BUS_A14             busPin[BUSPIN_A14 - 1]
 #define BUS_A12             busPin[BUSPIN_A12 - 1]
 #define BUS_A0              busPin[BUSPIN_A0 - 1]
 #define BUS_RESET           busPin[BUSPIN_RESET - 1]
 #define BUS_A7              busPin[BUSPIN_A7 - 1]
 #define BUS_A6              busPin[BUSPIN_A6 - 1]
 #define BUS_A5              busPin[BUSPIN_A5 - 1]
+#define BUS_ROMCS           busPin[BUSPIN_ROMCS - 1]
 #define BUS_A11             busPin[BUSPIN_A11 - 1]
 
 extern short                busPin[56];
-extern BYTE                 busDataOut;
+extern WORD                 busAddress;
+extern BYTE                 busDataOut, busDataIn;
 extern int                  busState;
 
 #endif

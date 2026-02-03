@@ -85,7 +85,8 @@ void (*SPECTRUM_Joystick)(int, int, int) = Sinclair_Input;
 
 // expansion bus ---------------------------------------------------------------
 short       busPin[56];
-BYTE        busDataOut;
+WORD        busAddress;
+BYTE        busDataOut, busDataIn;
 int         busState;
 
 // timer -----------------------------------------------------------------------
@@ -162,21 +163,28 @@ void SPECTRUM_TVScan(BYTE *screen)
             // io reading
 
             // expansion bus first ...
+            BUS_A15 = CPU_A15;
+            BUS_MREQ = CPU_MREQ;
             BUS_IORQ = CPU_IORQ;
             BUS_RD = CPU_RD;
+            BUS_WR = CPU_WR;
             BUS_M1 = CPU_M1;
+            BUS_A14 = CPU_A14;
             BUS_A12 = CPU_A12;
             BUS_A0 = CPU_A0;
             BUS_A7 = CPU_A7;
             BUS_A6 = CPU_A6;
             BUS_A5 = CPU_A5;
             BUS_A11 = CPU_A11;
+            busAddress = cpuAddress;
             busDataOut = 0xff;
+            busDataIn = cpuData;
             busState = HIGH;
             Sinclair_Read();
             Cursor_Read();
             Kempston_Read();
             Fuller_Read();
+            TAPE_Cycle();
 
             // ... then internal
             PSG_Read();
@@ -208,15 +216,12 @@ void SPECTRUM_TVScan(BYTE *screen)
             ROM_A14 = MMU_Q4;
             if (ROM_CE && ROM_OE)
             {
-                if (TAPE_FastSpeed())
+                if (!BUS_ROMCS)
                 {
-                    ROM_LdBytes();  // loading
-                    ROM_SaContrl(); // saving
+                    romAddress = cpuAddress & 0x3fff;
+                    ROM_Cycle();
+                    cpuData = romData;
                 }
-
-                romAddress = cpuAddress & 0x3fff;
-                ROM_Cycle();
-                cpuData = romData;
             }
             else if (CPU_MREQ)
             {
