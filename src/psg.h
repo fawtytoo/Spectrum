@@ -34,6 +34,7 @@
 #define PSG_B           psgPin[PSGPIN_B - 1]
 #define PSG_A           psgPin[PSGPIN_A - 1]
 #define PSG_CLOCK       psgPin[PSGPIN_CLOCK - 1]
+#define PSG_RESET       psgPin[PSGPIN_RESET - 1]
 #define PSG_BDIR        psgPin[PSGPIN_BDIR - 1]
 #define PSG_BC1         psgPin[PSGPIN_BC1 - 1]
 

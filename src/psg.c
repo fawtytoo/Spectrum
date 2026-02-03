@@ -51,7 +51,7 @@ static const int    psgEnvelope[16][48] =
 
 static int          psgEnvLambda = 0;
 static int          psgEnvPos = 0;
-static int          psgEnvVolume = 0;
+static BYTE         psgEnvVolume = 0;
 
 // noise -----------------------------------------------------------------------
 static int      psgNoiseLambda = 0;
@@ -68,18 +68,15 @@ typedef struct
     int     phase;
     int     lambda;
     BYTE    *l, *h;
-    int     tone, noise;
-    int     volume;
-    int     envVolOn;
-    int     *volOut[2];
+    BYTE    *volOut[2];
 }
 PSGCHAN;
 
 static PSGCHAN      psgChan[3] =
 {
-    {.l = &psgData[REG_A_L], .h = &psgData[REG_A_H], .volOut = {&psgChan[CHAN_A].volume, &psgEnvVolume}},
-    {.l = &psgData[REG_B_L], .h = &psgData[REG_B_H], .volOut = {&psgChan[CHAN_B].volume, &psgEnvVolume}},
-    {.l = &psgData[REG_C_L], .h = &psgData[REG_C_H], .volOut = {&psgChan[CHAN_C].volume, &psgEnvVolume}}
+    {.l = &psgData[REG_A_L], .h = &psgData[REG_A_H], .volOut = {&psgData[REG_A_VOL], &psgEnvVolume}},
+    {.l = &psgData[REG_B_L], .h = &psgData[REG_B_H], .volOut = {&psgData[REG_B_VOL], &psgEnvVolume}},
+    {.l = &psgData[REG_C_L], .h = &psgData[REG_C_H], .volOut = {&psgData[REG_C_VOL], &psgEnvVolume}}
 };
 
 // DAC -------------------------------------------------------------------------
@@ -117,30 +114,13 @@ static void PSG_SetData(BYTE data)
         break;
 
       case REG_MIXER:
-        psgChan[CHAN_A].tone = data & 1;
-        psgChan[CHAN_B].tone = (data & 2) >> 1;
-        psgChan[CHAN_C].tone = (data & 4) >> 2;
-        psgChan[CHAN_A].noise = (data & 8) >> 3;
-        psgChan[CHAN_B].noise = (data & 16) >> 4;
-        psgChan[CHAN_C].noise = (data & 32) >> 5;
+        data &= 63;
         break;
 
       case REG_A_VOL:
-        data &= 31;
-        psgChan[CHAN_A].volume = data & 15;
-        psgChan[CHAN_A].envVolOn = data >> 4;
-        break;
-
       case REG_B_VOL:
-        data &= 31;
-        psgChan[CHAN_B].volume = data & 15;
-        psgChan[CHAN_B].envVolOn = data >> 4;
-        break;
-
       case REG_C_VOL:
         data &= 31;
-        psgChan[CHAN_C].volume = data & 15;
-        psgChan[CHAN_C].envVolOn = data >> 4;
         break;
 
       case REG_ENV_L:
@@ -168,8 +148,11 @@ static int Lambda_Frequency(int lambda)
     return lambda * 16;
 }
 
-static int PSG_Generate(PSGCHAN *chan)
+static int PSG_Generate(PSGCHAN *chan, BYTE mixer)
 {
+    BYTE    tone = mixer & 1;
+    BYTE    noise = (mixer >> 3) & 1;
+
     if (chan->lambda == 0)
     {
         chan->lambda = Lambda_Frequency(*chan->h * 256 + *chan->l);
@@ -177,13 +160,29 @@ static int PSG_Generate(PSGCHAN *chan)
     }
     chan->lambda--;
 
-    return *chan->volOut[chan->envVolOn] * ((chan->phase | chan->tone) & (psgNoisePhase | chan->noise));
+    return (*chan->volOut[*chan->volOut[0] >> 4] & 15) * ((chan->phase | tone) & (psgNoisePhase | noise));
 }
 
 // cycle -----------------------------------------------------------------------
 void PSG_Cycle()
 {
+    int     reset = !PSG_RESET;
     int     bit;
+
+    psgData[REG_A_L] *= reset;
+    psgData[REG_A_H] *= reset;
+    psgData[REG_B_L] *= reset;
+    psgData[REG_B_H] *= reset;
+    psgData[REG_C_L] *= reset;
+    psgData[REG_C_H] *= reset;
+    psgData[REG_NOISE] *= reset;
+    psgData[REG_MIXER] *= reset;
+    psgData[REG_A_VOL] *= reset;
+    psgData[REG_B_VOL] *= reset;
+    psgData[REG_C_VOL] *= reset;
+    psgData[REG_ENV_L] *= reset;
+    psgData[REG_ENV_H] *= reset;
+    psgData[REG_ENV_SHAPE] *= reset;
 
     if (psgNoiseLambda == 0)
     {
@@ -193,6 +192,9 @@ void PSG_Cycle()
         psgNoisePhase ^= bit;
     }
     psgNoiseLambda--;
+
+    psgEnvLambda *= reset;
+    psgEnvPos *= reset;
 
     if (psgEnvLambda == 0)
     {
@@ -206,9 +208,9 @@ void PSG_Cycle()
     }
     psgEnvLambda--;
 
-    PSG_A = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_A])];
-    PSG_B = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_B])];
-    PSG_C = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_C])];
+    PSG_A = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_A], psgData[REG_MIXER])];
+    PSG_B = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_B], psgData[REG_MIXER] >> 1)];
+    PSG_C = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_C], psgData[REG_MIXER] >> 2)];
 }
 
 void PSG_Read()
@@ -236,38 +238,4 @@ void PSG_Write(BYTE data)
             PSG_SetData(data);
         }
     }
-}
-
-void PSG_Reset()
-{
-    PSG_Register(REG_A_L);
-    PSG_SetData(0);
-    PSG_Register(REG_A_H);
-    PSG_SetData(0);
-    PSG_Register(REG_B_L);
-    PSG_SetData(0);
-    PSG_Register(REG_B_H);
-    PSG_SetData(0);
-    PSG_Register(REG_C_L);
-    PSG_SetData(0);
-    PSG_Register(REG_C_H);
-    PSG_SetData(0);
-    PSG_Register(REG_NOISE);
-    PSG_SetData(0);
-    PSG_Register(REG_MIXER);
-    PSG_SetData(0);
-    PSG_Register(REG_A_VOL);
-    PSG_SetData(0);
-    PSG_Register(REG_B_VOL);
-    PSG_SetData(0);
-    PSG_Register(REG_C_VOL);
-    PSG_SetData(0);
-    PSG_Register(REG_ENV_L);
-    PSG_SetData(0);
-    PSG_Register(REG_ENV_H);
-    PSG_SetData(0);
-    PSG_Register(REG_ENV_SHAPE);
-    PSG_SetData(0);
-    //psgData[REG_IOA] = 0;
-    //psgData[REG_IOB] = 0;
 }

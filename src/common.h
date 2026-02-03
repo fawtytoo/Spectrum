@@ -30,7 +30,6 @@ extern WORD     cpuAddress;
 extern BYTE     cpuData;
 
 void CPU_Cycle(void);
-void CPU_Reset(void);
 void ROM_LdBytes(void);
 void ROM_SaContrl(void);
 
@@ -52,7 +51,6 @@ extern int      psgState;
 void PSG_Read(void);
 void PSG_Write(BYTE);
 void PSG_Cycle(void);
-void PSG_Reset(void);
 
 // tape ------------------------------------------------------------------------
 short TAPE_Input(short);

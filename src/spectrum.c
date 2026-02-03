@@ -154,7 +154,10 @@ void SPECTRUM_TVScan(BYTE *screen)
 
         CPU_CLK = ULA_PHICPU;
         CPU_INT = ULA_INT;
-        if (CPU_CLK)
+        CPU_RESET = BUS_RESET;
+        MMU_CLR = BUS_RESET;
+        PSG_RESET = BUS_RESET;
+        if (CPU_CLK || BUS_RESET)
         {
             // io reading
 
@@ -260,7 +263,6 @@ void SPECTRUM_TVScan(BYTE *screen)
                 MMU_D4 = (cpuData >> 4) & 1;
                 MMU_D5 = (cpuData >> 5) & 1;
                 MMU_Cycle();
-                MMU_CLR = 0;
             }
 
             pcfAddressIn = cpuAddress & 0x3fff;
@@ -287,10 +289,14 @@ void SPECTRUM_TVScan(BYTE *screen)
         }
 
         PSG_CLOCK = ULA_C;
-        if (PSG_CLOCK)
+        if (PSG_CLOCK || PSG_RESET)
         {
             PSG_Cycle();
         }
+
+        // the bus reset line should ideally be reset externally
+        //  but there is no way to inject that whilst in this loop
+        BUS_RESET = 0;
 
         // video output
         *(screen + column++) = tvColour[ULA_R] & tvBright[ULA_BRIGHT];
@@ -340,9 +346,7 @@ void SPECTRUM_TVScan(BYTE *screen)
 
 void SPECTRUM_Reset()
 {
-    CPU_Reset();
-    PSG_Reset();
-    MMU_CLR = 1;
+    BUS_RESET = 1;
 }
 
 // audio -----------------------------------------------------------------------

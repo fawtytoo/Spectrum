@@ -956,7 +956,7 @@ int main(int argc, char **argv)
     BYTE                *rom;           // rom data
     int                 size = 0;       // rom size
 
-    SYS_Print(TITLE" v1.0.0 ("__DATE__")");
+    SYS_Print(TITLE" v1.0.1 ("__DATE__")");
 
     for (arg = 1; arg < argc; arg++)
     {

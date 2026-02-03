@@ -130,7 +130,7 @@ static const BYTE       lutSZP[256] =
 
 // ops -------------------------------------------------------------------------
 #define CYCLEINC(i)     cpuOpCycleInc = i
-#define OPCYCLE(c)      CYCLEINC(0); cpuOpCycle = c
+#define OPCYCLE(c)      CYCLEINC(0); cpuOpCycle[0] = c
 #define M1_FETCH(t)     cpuOpTable = t; OPCYCLE(3)
 #define OP_FETCH        M1_FETCH(0); USE_HL; if (CPU_INT & intFF1) { intFF1 = intFF2 = 0; OPCYCLE(6); if (CPU_HALT) { CPU_HALT = 0; regPC++; } } if (intFF2) { intFF1 = intFF2; }
 #define IRh             (cpuIR >> 3) & 7
@@ -139,7 +139,7 @@ static const BYTE       lutSZP[256] =
 #define OP22            148
 #define OP2A            188
 
-static int              cpuOpCycle = 0;     // 0 = reset
+static int              cpuOpCycle[2] = {0, 0};
 static int              cpuOpCycleInc = 0;
 
 static int              cpuOpTable = 0;
@@ -455,14 +455,14 @@ void CPU_Cycle()
     CPU_M1 = 0;
     CPU_RFSH = 0;
 
-    cpuOpCycle += cpuOpCycleInc;
+    cpuOpCycle[0] += cpuOpCycleInc;
 
     CYCLEINC(1);
 
-    switch (cpuOpCycle)
+    switch (cpuOpCycle[CPU_RESET])
     {
       case 0: // RESET
-        intFF1 = intFF2 = 0; intMode = 0; break;
+        OPCYCLE(1); intFF1 = intFF2 = 0; intMode = 0; break;
       case 1:
         regAF = 0xffff; regSP = 0xffff; break;
       case 2:
@@ -4245,12 +4245,6 @@ void CPU_Cycle()
 
     CPU_IORQ = iorq > 0;
     CPU_MREQ = mreq > 0;
-}
-
-// -----------------------------------------------------------------------------
-void CPU_Reset()
-{
-    OPCYCLE(0);
 }
 
 // -----------------------------------------------------------------------------

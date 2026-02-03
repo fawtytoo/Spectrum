@@ -63,6 +63,7 @@
 #define BUS_M1              busPin[BUSPIN_M1 - 1]
 #define BUS_A12             busPin[BUSPIN_A12 - 1]
 #define BUS_A0              busPin[BUSPIN_A0 - 1]
+#define BUS_RESET           busPin[BUSPIN_RESET - 1]
 #define BUS_A7              busPin[BUSPIN_A7 - 1]
 #define BUS_A6              busPin[BUSPIN_A6 - 1]
 #define BUS_A5              busPin[BUSPIN_A5 - 1]

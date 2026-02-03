@@ -54,6 +54,7 @@
 #define CPU_IORQ            cpuPin[CPUPIN_IORQ - 1]
 #define CPU_RD              cpuPin[CPUPIN_RD - 1]
 #define CPU_WR              cpuPin[CPUPIN_WR - 1]
+#define CPU_RESET           cpuPin[CPUPIN_RESET - 1]
 #define CPU_M1              cpuPin[CPUPIN_M1 - 1]
 #define CPU_RFSH            cpuPin[CPUPIN_RFSH - 1]
 #define CPU_A0              cpuPin[CPUPIN_A0 - 1]
