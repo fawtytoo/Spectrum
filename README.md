@@ -48,6 +48,9 @@ Tape saving is accomplished similarly either through the headphone socket or via
 drag 'n drop. If saving to a file, data is ALWAYS appended (corrupted files are
 treated as read-only).
 
+NOTE: It's highly recommended that tape files are marked as read-only in your
+filing system to prevent accidental corruption.
+
 ## Future plans?
 
 ### Z80 CPU accuracy
