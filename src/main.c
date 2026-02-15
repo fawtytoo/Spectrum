@@ -91,12 +91,13 @@ typedef struct
 }
 HEADSUP;
 
-static HEADSUP              huJoystick[4] =
+static HEADSUP              huJoystick[5] =
 {
     {.width = 195, .height = 32, .pos = 30 * WIDTH + 78},
     {.width = 162, .height = 32, .pos = 30 * WIDTH + 95},
     {.width = 205, .height = 32, .pos = 30 * WIDTH + 73},
-    {.width = 94,  .height = 32, .pos = 30 * WIDTH + 129}
+    {.width = 94,  .height = 32, .pos = 30 * WIDTH + 129},
+    {.width = 246, .height = 32, .pos = 30 * WIDTH + 53}
 };
 static int                  huJoystickTimer = 0;
 
@@ -135,8 +136,7 @@ static EVENT                HU_Draw;
 void (*Keyboard_Input)(int, int) = SPECTRUM_Keyboard;
 
 // joystick --------------------------------------------------------------------
-static int      joyType = JOY_PROGRAM;
-static int      joyTypeOld = JOY_CURSOR;
+static int      joyType = JOY_CURSOR;
 
 // programmable joystick -------------------------------------------------------
 typedef struct
@@ -200,8 +200,8 @@ static OPTION           fnKey[KEY_COUNT] =
     {"F3", "Mute/unmute audio"},
     {"F4", "Select AY output ABC/ACB/Mono"},
     {"F5", "Reset Spectrum (press twice)"},
-    {"F7", "Select joystick Sinclair/Cursor/Kempston/Fuller"},
-    {"F8", "Programmable joysticks (press twice to program)"},
+    {"F7", "Select joystick Sinclair/Cursor/Kempston/Fuller/Programmable"},
+    {"F8", "Programmable joysticks (must be pre-selected)"},
     {"F10", "Hide/show border"},
     {"F11", "Fullscreen/window mode"},
     {"F12", "Toggle 48K/128K video mode"},
@@ -788,12 +788,7 @@ static void Key_Input()
             break;
 
           case SDLK_F7:
-            if (joyType == JOY_PROGRAM)
-            {
-                joyType = joyTypeOld;
-                SPECTRUM_JoystickSelect(joyType);
-            }
-            else if (huJoystickTimer > 0)
+            if (huJoystickTimer > 0)
             {
                 if (joyType == JOY_SINCLAIR)
                 {
@@ -809,9 +804,12 @@ static void Key_Input()
                 }
                 else if (joyType == JOY_FULLER)
                 {
+                    joyType = JOY_PROGRAM;
+                }
+                else if (joyType == JOY_PROGRAM)
+                {
                     joyType = JOY_SINCLAIR;
                 }
-                joyTypeOld = joyType;
                 SPECTRUM_JoystickSelect(joyType);
             }
             huJoystickTimer = HU_TIMEOUT;
@@ -819,15 +817,10 @@ static void Key_Input()
             break;
 
           case SDLK_F8:
-            joyType = JOY_PROGRAM;
-            SPECTRUM_JoystickSelect(joyType);
-            if (huProgramTimer == 0)
+            if (huJoystickTimer > 0 && joyType == JOY_PROGRAM && rectScreenZoom == FALSE)
             {
                 huProgramTimer = HU_TIMEOUT;
                 huJoystickTimer = 0;
-            }
-            else if (rectScreenZoom == FALSE)
-            {
                 joyProgramChange = TRUE;
                 joyProgramStage = 0;
                 Keyboard_Input = Joystick_Key_Input;
