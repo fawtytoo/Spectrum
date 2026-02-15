@@ -1,5 +1,8 @@
 ; assembly used for the tape rom
 
+org $0000
+TAPE_DATA:          ; location where data is either read from or written to
+
 defs 1218, 0        ; padding
 
 ; SA-BYTES ---------------------------------------------------------------------
@@ -14,16 +17,16 @@ sa_start:
 ld c,a
 
 ld a,e              ; transmit block length
-out ($7f),a
+ld (TAPE_DATA),a
 ld a,d
-out ($7f),a
+ld (TAPE_DATA),a
 
 ld a,c
-out ($7f),a
+ld (TAPE_DATA),a
 
 sa_loop:
 ld a,(ix+$00)
-out ($7f),a
+ld (TAPE_DATA),a
 xor c
 ld c,a
 inc ix
@@ -33,12 +36,12 @@ or e
 jr nz,sa_loop
 
 ld a,c              ; parity byte
-out ($7f),a
+ld (TAPE_DATA),a
 
 scf
 ret
 
-defs 115,0          ; padding
+defs 110,0          ; padding
 
 ; LD-BYTES ---------------------------------------------------------------------
 ;   a  = 0 header, 255 data
@@ -46,35 +49,39 @@ defs 115,0          ; padding
 ;   de = block length
 ;   ix = start address
 
-; verifying not supported
-
 inc d
 ex af,af'
 dec d
 di
+nop
+nop
+nop
+nop
 ld hl,$053f
 push hl
 in a,($fe)
+nop
+nop
+nop
+nop
+nop
+nop
 cp a
 ret nz
-ex af,af'
-ret nc              ; causes "R Tape loading error"
-
-defs 8,0            ; to cater for late entry points
 
 call ld_start
 ret
 
 ld_start:
+ex af,af'
+ret nc              ; verifying not supported (R Tape loading error)
 ld c,a
-;ld a,$ff
-in a,($7f)          ; request block type
+ld a,(TAPE_DATA)
 xor c               ; clears carry flag
 ret nz              ; wrong block type
 
 ld_loop:            ; main loop
-;ld a,$ff
-in a,($7f)          ; request data
+ld a,(TAPE_DATA)
 ld (ix+$00),a
 xor c
 ld c,a
@@ -84,8 +91,7 @@ ld a,d
 or e
 jr nz,ld_loop
 
-;ld a,$ff
-in a,($7f)          ; parity byte
+ld a,(TAPE_DATA)
 xor c
 ret nz
 
