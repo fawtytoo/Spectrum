@@ -172,6 +172,7 @@ void SPECTRUM_TVScan(BYTE *screen)
             BUS_A14 = CPU_A14;
             BUS_A12 = CPU_A12;
             BUS_A0 = CPU_A0;
+            BUS_A1 = CPU_A1;
             BUS_A7 = CPU_A7;
             BUS_A6 = CPU_A6;
             BUS_A5 = CPU_A5;

@@ -111,6 +111,7 @@ int TAPE_FastSpeed(void);
 int TAPE_Ended(void);
 int TAPE_Loaded(void);
 void TAPE_Cycle(void);
+void TAPE_RomLock(int);
 
 // these functions are supplied by main.c
 void FILE_Write(BYTE *, WORD);

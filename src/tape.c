@@ -389,66 +389,76 @@ int TAPE_FastSpeed()
 // fast loading/saving ---------------------------------------------------------
 #include "bus.h"
 
+#define ROM_48K         0
+#define ROM_128K        1
+
+#define TAPE_DATA       0x0000
+
 static BYTE     tapeRom[0x4000] =
 {
     [0 ... 0x04bf] = 0,
-    0x00, 0x00, 0xcd, 0xc6, 0x04, 0xc9, 0x4f, 0x7b, 0xd3, 0x7f, 0x7a, 0xd3, 0x7f, 0x79, 0xd3, 0x7f,
-    0xdd, 0x7e, 0x00, 0xd3, 0x7f, 0xa9, 0x4f, 0xdd, 0x23, 0x1b, 0x7a, 0xb3, 0x20, 0xf2, 0x79, 0xd3,
-    0x7f, 0x37, 0xc9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0xcd, 0xc6, 0x04, 0xc9, 0x4f, 0x7b, 0x32, 0x00, 0x00, 0x7a, 0x32, 0x00, 0x00, 0x79,
+    0x32, 0x00, 0x00, 0xdd, 0x7e, 0x00, 0x32, 0x00, 0x00, 0xa9, 0x4f, 0xdd, 0x23, 0x1b, 0x7a, 0xb3,
+    0x20, 0xf1, 0x79, 0x32, 0x00, 0x00, 0x37, 0xc9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     [0x04f0 ... 0x054f] = 0,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x08, 0x15, 0xf3, 0x21, 0x3f, 0x05, 0xe5, 0xdb, 0xfe,
-    0xbf, 0xc0, 0x08, 0xd0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xcd, 0x70, 0x05, 0xc9,
-    0x4f, 0xdb, 0x7f, 0xa9, 0xc0, 0xdb, 0x7f, 0xdd, 0x77, 0x00, 0xa9, 0x4f, 0xdd, 0x23, 0x1b, 0x7a,
-    0xb3, 0x20, 0xf2, 0xdb, 0x7f, 0xa9, 0xc0, 0x37, 0xc9
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x08, 0x15, 0xf3, 0x00, 0x00, 0x00, 0x00, 0x21, 0x3f,
+    0x05, 0xe5, 0xdb, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbf, 0xc0, 0xcd, 0x70, 0x05, 0xc9,
+    0x08, 0xd0, 0x4f, 0x3a, 0x00, 0x00, 0xa9, 0xc0, 0x3a, 0x00, 0x00, 0xdd, 0x77, 0x00, 0xa9, 0x4f,
+    0xdd, 0x23, 0x1b, 0x7a, 0xb3, 0x20, 0xf1, 0x3a, 0x00, 0x00, 0xa9, 0xc0, 0x37, 0xc9
 };
+
+static int      romType = ROM_48K;
 
 void TAPE_Cycle()
 {
-    static int      ff[3] = {0, 0};
+    static BYTE     rom = 0x10; // assume 48k rom
+    static int      ff1 = 0, ff2 = 0, rcvd = 0;
     static BYTE     size[2];
 
-    BUS_ROMCS &= (!(BUS_RESET | ff[1]));
-    ff[0] &= BUS_ROMCS;
-    ff[1] &= BUS_ROMCS;
-
-    if (BUS_MREQ && BUS_RD && (!BUS_A15) && (!BUS_A14))
+    if (romType == ROM_128K && BUS_IORQ && BUS_WR && (!BUS_A15) && (!BUS_A1))
     {
-        if ((!ff[0]) && tapeFastSpeed && BUS_M1)
+        // we need to monitor if the 128k roms swap
+        //  as we should only override the subroutines in the 48k rom
+        rom = busDataIn & 0x10;
+    }
+
+    BUS_ROMCS &= (!(BUS_RESET | ff2));
+    ff1 &= BUS_ROMCS;
+    ff2 &= BUS_ROMCS;
+
+    if ((!ff1) && rom == 0x10 && tapeFastSpeed && BUS_M1)
+    {
+        if ((busAddress == 0x0556 || busAddress == 0x056c) && BUS_MREQ && BUS_RD)
         {
-            if (busAddress == 0x0556 || busAddress == 0x056c)
-            {
-                curBlock->pos = curBlock->data;
-            }
-            else if (busAddress == 0x04c2)
-            {
-                if (tapeReadOnly == TRUE)
-                {
-                    SYS_Print("\nUnable to save data");
-                    SYS_Print(" Tape either read only or corrupt");
-                    SYS_Print(" Saving to audio output only");
-                    return;
-                }
-
-                SYS_Print("\nSaving data to tape ...");
-                ff[2] = 0;
-            }
-            else
-            {
-                return;
-            }
-
-            ff[0] = 1;
-            BUS_ROMCS = 1;
+            curBlock->pos = curBlock->data;
         }
-        if (ff[0])
+        else if (busAddress == 0x04c2 && BUS_MREQ && BUS_RD && tapeReadOnly == FALSE)
         {
+            rcvd = 0;
+        }
+        else
+        {
+            return;
+        }
+
+        ff1 = 1;
+        BUS_ROMCS = 1;
+    }
+
+    if (ff1 && BUS_MREQ)
+    {
+        if (BUS_RD)
+        {
+            if (busAddress == TAPE_DATA && curBlock->index > 0 && curBlock->pos < curBlock->end)
+            {
+                tapeRom[TAPE_DATA] = *curBlock->pos++;
+            }
             busDataOut = tapeRom[busAddress];
             busState = LOW;
 
             if (busAddress == 0x04c5)
             {
                 FILE_Write(curBlock->data, curBlock->length);
-                ff[2] = 0;
             }
             else if (busAddress == 0x056f)
             {
@@ -462,35 +472,33 @@ void TAPE_Cycle()
                 return;
             }
 
-            ff[0] = 0;
-            ff[1] = 1;
+            ff1 = 0;
+            ff2 = 1;
         }
-    }
-
-    if (ff[0] && BUS_IORQ && BUS_RD && (!BUS_A7))
-    {
-        if (curBlock->index > 0 && curBlock->pos < curBlock->end)
+        else if (busAddress == TAPE_DATA && BUS_WR)
         {
-            busDataOut &= *curBlock->pos++;
-            busState = LOW;
-        }
-    }
-
-    if (ff[0] && BUS_IORQ && BUS_WR && (!BUS_A7))
-    {
-        if (ff[2] < 2)
-        {
-            size[ff[2]] = busDataIn;
-            ff[2]++;
-            if (ff[2] == 2)
+            if (rcvd < 2)
             {
-                curBlock = NewBlock(LE16(size) + 2);
-                SYS_Print(" Data length %i", LE16(size));
+                size[rcvd] = busDataIn;
+                rcvd++;
+                if (rcvd == 2)
+                {
+                    curBlock = NewBlock(LE16(size) + 2);
+                    SYS_Print("\nSaving data (size: %i)", LE16(size));
+                }
+            }
+            else if (curBlock->index > 0 && curBlock->pos < curBlock->end)
+            {
+                *curBlock->pos++ = busDataIn;
             }
         }
-        else if (curBlock->index > 0 && curBlock->pos < curBlock->end)
-        {
-            *curBlock->pos++ = busDataIn;
-        }
+    }
+}
+
+void TAPE_RomLock(int size)
+{
+    if (size == 32768)
+    {
+        romType = ROM_128K;
     }
 }

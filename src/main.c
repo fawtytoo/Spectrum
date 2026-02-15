@@ -1086,6 +1086,7 @@ int main(int argc, char **argv)
         ulaText = TEXT_ULA_128K;
     }
     SYS_Print("\nStarted in %s", ulaText);
+    TAPE_RomLock(size);
 
     signal(SIGINT, DoQuit);
 
