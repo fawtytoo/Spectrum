@@ -45,6 +45,7 @@ static SDL_Rect             rectWindow[2] =
 {
     {0, 0, VIEWWIDTH, VIEWHEIGHT}, {0, 0, 0, 0}
 };
+static int                  sdlLastSym = SDLK_UNKNOWN;
 
 static int                  rectScreenZoom = 0;
 static int                  rectWindowZoom = 0;
@@ -421,6 +422,12 @@ static void HU_Message(char *text, int time)
     huMessageText = text;
 }
 
+static void HU_Message2(char *text, int time)
+{
+    sdlLastSym = SDLK_UNKNOWN;
+    HU_Message(text, time);
+}
+
 // audio -----------------------------------------------------------------------
 static void Audio_Out(void *unused, Uint8 *stream, int length)
 {
@@ -482,7 +489,6 @@ static void Joystick_Key_Input(int key, int state)
 
 static void Key_Input()
 {
-    static int      lastsym = SDLK_UNKNOWN;
     static int      again = FALSE, twice = FALSE;
     SDL_Event       event;
     int             sym, state = 0;
@@ -564,17 +570,17 @@ static void Key_Input()
                 {
                     audioInput = 0;
                     SYS_Print(" %5i bytes %s", tapeSize, tapeReadOnly == TRUE ? "READ ONLY" : "");
-                    HU_Message(tapeReadOnly == TRUE ? "Tape inserted READ ONLY" : "Tape inserted", HU_TIMEOUT);
+                    HU_Message2(tapeReadOnly == TRUE ? "Tape inserted READ ONLY" : "Tape inserted", HU_TIMEOUT);
                 }
                 else
                 {
                     EJECT_TAPE;
-                    HU_Message("Tape has no valid data!", HU_TIMEOUT);
+                    HU_Message2("Tape has no valid data!", HU_TIMEOUT);
                 }
             }
             else
             {
-                HU_Message("Check tape is inserted correctly!", HU_TIMEOUT);
+                HU_Message2("Check tape is inserted correctly!", HU_TIMEOUT);
             }
             SDL_free(event.drop.file);
             continue;
@@ -696,7 +702,7 @@ static void Key_Input()
             continue;
         }
 
-        if (lastsym == sym && huMessageTimer > 0)
+        if (sdlLastSym == sym && huMessageTimer > 0)
         {
             again = TRUE;
         }
@@ -870,7 +876,7 @@ static void Key_Input()
             {
                 if (again == FALSE)
                 {
-                    HU_Message("Press F3 again to eject tape", HU_TIMEOUT_KEY);
+                    HU_Message("Press again to eject tape", HU_TIMEOUT_KEY);
                     twice = TRUE;
                 }
                 else
@@ -925,7 +931,7 @@ static void Key_Input()
         }
 
         if (sym != SDLK_F8 && sym != SDLK_F9)
-            lastsym = sym;
+            sdlLastSym = sym;
     }
 }
 
