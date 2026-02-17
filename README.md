@@ -3,7 +3,7 @@
 ## About
 
 This is a Sinclair ZX Spectrum emulator for the 48K and 128K models.
-- 48K (issue 3)
+- 48K (issue 5)
 - 128K (toast-rack)
 
 The emulator is cycle based to provide the greatest accuracy.
