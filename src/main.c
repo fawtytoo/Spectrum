@@ -175,7 +175,7 @@ static int                  tapeReadOnly;
 // help ------------------------------------------------------------------------
 #define HELP(s, c)      for (arg = 0; arg < c; arg++) { SYS_Print(" %-10s - %s", s[arg].name, s[arg].description); }
 
-#define HELP_COUNT      5
+#define HELP_COUNT      6
 #define KEY_COUNT       16
 
 typedef struct
@@ -191,7 +191,8 @@ static OPTION           emuHelp[HELP_COUNT] =
     {"-fs", "Start fullscreen"},
     {"-ws n", "Window scale"},
     {"-keys", "Print emulator function keys"},
-    {"-nopause", "Don't display PAUSED"}
+    {"-nopause", "Don't display PAUSED"},
+    {"-vd $", "SDL video driver: wayland/x11"}
 };
 
 static OPTION           fnKey[KEY_COUNT] =
@@ -954,6 +955,7 @@ int main(int argc, char **argv)
     char                *file = "NONE"; // rom file
     BYTE                *rom;           // rom data
     int                 size = 0;       // rom size
+    char                *driver = "";
 
     SYS_Print(TITLE" v1.0.1 ("__DATE__")");
 
@@ -1010,6 +1012,11 @@ int main(int argc, char **argv)
         {
             drawPause = FALSE;
         }
+        else if (strcmp(argv[arg], "-vd") == 0 && arg < argc - 1)
+       {
+            arg++;
+            driver = argv[arg];
+        }
         else
         {
             help = 1;
@@ -1030,6 +1037,7 @@ int main(int argc, char **argv)
     }
 
     SDL_SetHint(SDL_HINT_APP_NAME, TITLE);
+    SDL_SetHint(SDL_HINT_VIDEODRIVER, driver);
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
 
