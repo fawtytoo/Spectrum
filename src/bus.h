@@ -55,7 +55,7 @@
 #define BUSPIN_A4           28 + 24 //  ->
 #define BUSPIN_ROMCS        28 + 25 // <-
 #define BUSPIN_BUSACK       28 + 26 //  ->
-#define BUSPIN_A9           29 + 27 //  ->
+#define BUSPIN_A9           28 + 27 //  ->
 #define BUSPIN_A11          28 + 28 //  ->
 
 #define BUS_A15             busPin[BUSPIN_A15 - 1]
