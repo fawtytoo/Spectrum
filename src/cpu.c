@@ -132,7 +132,7 @@ static const BYTE       lutSZP[256] =
 #define CYCLEINC(i)     cpuOpCycleInc = i
 #define OPCYCLE(c)      CYCLEINC(0); cpuOpCycle[0] = c
 #define M1_FETCH(t)     cpuOpTable = t; OPCYCLE(3)
-#define OP_FETCH        M1_FETCH(0); USE_HL; if (CPU_INT & intFF1) { intFF1 = intFF2 = 0; OPCYCLE(6); if (CPU_HALT) { CPU_HALT = 0; regPC++; } } if (intFF2) { intFF1 = intFF2; }
+#define OP_FETCH        M1_FETCH(0); USE_HL; if (CPU_INT & intFF1) { intFF1 = intFF2 = 0; OPCYCLE(6); if (CPU_HALT) { CPU_HALT = 0; regPC++; } }
 #define IRh             (cpuIR >> 3) & 7
 
 #define NOP             25
@@ -2732,7 +2732,7 @@ void CPU_Cycle()
       case 1134:
         regW = cpuData; if (FFLAG(SF)) { regPC = regWZ; } OP_FETCH; break;
       case 1135: // ei 4(4)
-        intFF1 = 0; intFF2 = 1; OP_FETCH; break;
+        OP_FETCH; intFF1 = intFF2 = 1; break;
       case 1136: // call m,NN 10(4,3,3) 17(4,3,4,3,3)
         break;
       case 1137:
