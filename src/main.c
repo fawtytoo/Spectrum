@@ -131,8 +131,6 @@ static HEADSUP              huPaused =
 };
 static int                  drawPause = TRUE;
 
-static EVENT                HU_Draw;
-
 // keyboard --------------------------------------------------------------------
 void (*Keyboard_Input)(int, int) = SPECTRUM_Keyboard;
 
@@ -308,27 +306,6 @@ void FILE_Write(BYTE *data, WORD length)
     }
 }
 
-// emulation -------------------------------------------------------------------
-static void DoNothing()
-{
-}
-
-static void DoEmulate()
-{
-    // locking the audio output seems to cause pops and clicks FIXME
-    //SDL_LockAudioDevice(sdlAudioOut);
-    SDL_LockTextureToSurface(texScreen, NULL, &sdlSurface);
-    SPECTRUM_TVScan((Uint8 *)sdlSurface->pixels);
-    HU_Draw();
-    SDL_UnlockTexture(texScreen);
-    //SDL_UnlockAudioDevice(sdlAudioOut);
-}
-
-static void DoQuit()
-{
-    emuPower = 0;
-}
-
 // headsup ---------------------------------------------------------------------
 static void HU_DrawGfx(Uint8 *surface, Uint32 *gfx, HEADSUP *hu, Uint8 how[3])
 {
@@ -411,9 +388,6 @@ static void HU_DrawPaused()
         HU_DrawGfx(surface, dataPaused[0], &huPaused, HU_GFX_BLACK);
         HU_DrawGfx(surface, dataPaused[1], &huPaused, HU_GFX_WHITE);
     }
-
-    HU_Draw = HU_DrawNormal;
-    Emulate = DoNothing;
 }
 
 static void HU_Message(char *text, int time)
@@ -427,6 +401,48 @@ static void HU_Message2(char *text, int time)
 {
     sdlLastSym = SDLK_UNKNOWN;
     HU_Message(text, time);
+}
+
+// emulation -------------------------------------------------------------------
+static void DoNothing()
+{
+}
+
+static void DoEmulate()
+{
+    // locking the audio output seems to cause pops and clicks FIXME
+    //SDL_LockAudioDevice(sdlAudioOut);
+    SDL_LockTextureToSurface(texScreen, NULL, &sdlSurface);
+    SPECTRUM_TVScan((Uint8 *)sdlSurface->pixels);
+    if (emuPaused == FALSE)
+    {
+        if (rectScreenZoom == FALSE)
+        {
+            HU_DrawNormal();
+        }
+    }
+    else
+    {
+        HU_DrawPaused();
+    }
+    SDL_UnlockTexture(texScreen);
+    //SDL_UnlockAudioDevice(sdlAudioOut);
+
+    if (emuPaused == TRUE)
+    {
+        Emulate = DoNothing;
+    }
+}
+
+static void DoUnpause()
+{
+    emuPaused = FALSE;
+    Emulate = DoEmulate;
+}
+
+static void DoQuit()
+{
+    emuPower = 0;
 }
 
 // audio -----------------------------------------------------------------------
@@ -596,10 +612,9 @@ static void Key_Input()
 
         sym = event.key.keysym.sym;
 
-        if (emuPaused && state == 1 && sym != SDLK_PAUSE && sym != SDLK_F10 && sym != SDLK_F11)
+        if (emuPaused == TRUE && state == 1 && sym != SDLK_PAUSE && sym != SDLK_F10 && sym != SDLK_F11)
         {
-            emuPaused = FALSE;
-            Emulate = DoEmulate;
+            DoUnpause();
             continue;
         }
 
@@ -836,17 +851,6 @@ static void Key_Input()
 
           case SDLK_F10:
             rectScreenZoom ^= 1;
-            if (emuPaused == FALSE)
-            {
-                if (rectScreenZoom == TRUE)
-                {
-                    HU_Draw = DoNothing;
-                }
-                else
-                {
-                    HU_Draw = HU_DrawNormal;
-                }
-            }
             break;
 
           case SDLK_F11:
@@ -916,7 +920,6 @@ static void Key_Input()
             if (emuPaused == FALSE)
             {
                 emuPaused = TRUE;
-                HU_Draw = HU_DrawPaused;
                 if (twice == TRUE) // some messages must be cancelled
                 {
                     huMessageTimer = 0;
@@ -925,8 +928,7 @@ static void Key_Input()
             }
             else
             {
-                emuPaused = FALSE;
-                Emulate = DoEmulate;
+                DoUnpause();
             }
             break;
         }
@@ -1129,7 +1131,6 @@ int main(int argc, char **argv)
     SDL_PauseAudioDevice(sdlAudioOut, SDL_FALSE);
     SDL_PauseAudioDevice(sdlAudioIn, SDL_FALSE);
 
-    HU_Draw = HU_DrawNormal;
     Emulate = DoEmulate;
     SPECTRUM_UlaType(ulaType);
     SPECTRUM_JoystickSelect(joyType);
