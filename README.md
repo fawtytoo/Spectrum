@@ -51,6 +51,20 @@ treated as read-only).
 NOTE: It's highly recommended that tape files are marked as read-only in your
 filing system to prevent accidental corruption.
 
+## Command line options
+```
+    -rom FILE  - 48K/128K/cartridge ROM filename
+    -fs        - Start fullscreen
+    -ws n      - Window scale (default: 2)
+    -keys      - List emulator function keys
+    -vd $      - SDL video driver: wayland/x11
+```
+The video driver is necessary for keyboard input source layouts. If you want
+this emulator to use a different layout to other open applications, e.g.
+QWERTY instead of DVORAK, you may need this option set. Quite simply, if your
+keyboard layout isn't being honoured, try `x11` or `wayland` to match your
+display server.
+
 ## Future plans?
 
 ### Z80 CPU accuracy
