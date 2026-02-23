@@ -138,6 +138,10 @@ void (*Keyboard_Input)(int, int) = SPECTRUM_Keyboard;
 static int      joyType = JOY_CURSOR;
 
 // programmable joystick -------------------------------------------------------
+#define TEXT_JOY        "Press F8 again to program joysticks"
+#define TEXT_JOY1       "Press ESC to skip joystick 1"
+#define TEXT_JOY2       "Press ESC to skip joystick 2"
+
 typedef struct
 {
     char    *name;
@@ -201,7 +205,7 @@ static OPTION           fnKey[KEY_COUNT] =
     {"F4", "Select AY output ABC/ACB/Mono"},
     {"F5", "Reset Spectrum (press twice)"},
     {"F7", "Select joystick Sinclair/Cursor/Kempston/Fuller/Programmable"},
-    {"F8", "Programmable joysticks (must be pre-selected)"},
+    {"F8", "Program joysticks (press twice & Programmable must be pre-selected)"},
     {"F10", "Hide/show border"},
     {"F11", "Fullscreen/window mode"},
     {"F12", "Toggle 48K/128K video mode"},
@@ -374,7 +378,10 @@ static void HU_DrawNormal()
 
     if (huMessageTimer > 0)
     {
-        huMessageTimer--;
+        if (joyProgramChange == FALSE)
+        {
+            huMessageTimer--;
+        }
         HU_DrawText(surface, &huMessage, huMessageText);
     }
 }
@@ -683,9 +690,17 @@ static void Key_Input()
 
         if (joyProgramChange == TRUE)
         {
-            if (sym == SDLK_ESCAPE)
+            if (sym == SDLK_ESCAPE && state == 0)
             {
-                Joystick_Program_Cancel();
+                if (joyProgramStage < 5)
+                {
+                    joyProgramStage = 5;
+                    HU_Message(TEXT_JOY2, 1);
+                }
+                else
+                {
+                    Joystick_Program_Cancel();
+                }
             }
             continue;
         }
@@ -836,16 +851,25 @@ static void Key_Input()
             }
             huJoystickTimer = HU_TIMEOUT;
             huProgramTimer = 0;
+            huMessageTimer = 0;
             break;
 
           case SDLK_F8:
-            if (huJoystickTimer > 0 && joyType == JOY_PROGRAM && rectScreenZoom == FALSE)
+            if (joyType == JOY_PROGRAM && rectScreenZoom == FALSE)
             {
+                if (again == TRUE)
+                {
+                    joyProgramChange = TRUE;
+                    joyProgramStage = 0;
+                    Keyboard_Input = Joystick_Key_Input;
+                    HU_Message(TEXT_JOY1, 1);
+                }
+                else
+                {
+                    HU_Message(TEXT_JOY, HU_TIMEOUT_KEY);
+                }
                 huProgramTimer = HU_TIMEOUT;
                 huJoystickTimer = 0;
-                joyProgramChange = TRUE;
-                joyProgramStage = 0;
-                Keyboard_Input = Joystick_Key_Input;
             }
             break;
 
@@ -933,8 +957,7 @@ static void Key_Input()
             break;
         }
 
-        if (sym != SDLK_F8 && sym != SDLK_F9)
-            sdlLastSym = sym;
+        sdlLastSym = sym;
     }
 }
 
