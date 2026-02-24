@@ -28,6 +28,7 @@ static SDL_Window           *sdlWindow;
 static SDL_Renderer         *sdlRenderer;
 static SDL_Texture          *texScreen, *texTarget;
 static SDL_Surface          *sdlSurface;
+static SDL_Cursor           *sdlCursorPause;
 static SDL_Rect             rectScreen[2] =
 {
     {0, 28, VIEWWIDTH, VIEWHEIGHT}, {48, 64, 256, 192}
@@ -80,10 +81,6 @@ static EVENT                Emulate;
 #define HU_TIMEOUT_KEY      FPS * 2
 #define HU_TIMEOUT          FPS * 4
 
-#define HU_GFX_INVERT       (Uint8 [3]){0xa0, 0xff, 0x00}
-#define HU_GFX_BLACK        (Uint8 [3]){0x00, 0x00, 0x00}
-#define HU_GFX_WHITE        (Uint8 [3]){0x00, 0xff, 0xff}
-
 typedef struct
 {
     int         width;
@@ -124,12 +121,6 @@ static HEADSUP              huMessage =
 };
 static char                 *huMessageText = TITLE;
 static int                  huMessageTimer = 0;
-
-static HEADSUP              huPaused =
-{
-    .width = 158, .height = 32, .pos = 144 * WIDTH + 97
-};
-static int                  drawPause = TRUE;
 
 // keyboard --------------------------------------------------------------------
 void (*Keyboard_Input)(int, int) = SPECTRUM_Keyboard;
@@ -177,7 +168,7 @@ static int                  tapeReadOnly;
 // help ------------------------------------------------------------------------
 #define HELP(s, c)      for (arg = 0; arg < c; arg++) { SYS_Print(" %-10s - %s", s[arg].name, s[arg].description); }
 
-#define HELP_COUNT      6
+#define HELP_COUNT      5
 #define KEY_COUNT       16
 
 typedef struct
@@ -193,7 +184,6 @@ static OPTION           emuHelp[HELP_COUNT] =
     {"-fs", "Start fullscreen"},
     {"-ws n", "Window scale"},
     {"-keys", "Print emulator function keys"},
-    {"-nopause", "Don't display PAUSED"},
     {"-vd $", "SDL video driver: wayland/x11"}
 };
 
@@ -311,7 +301,7 @@ void FILE_Write(BYTE *data, WORD length)
 }
 
 // headsup ---------------------------------------------------------------------
-static void HU_DrawGfx(Uint8 *surface, Uint32 *gfx, HEADSUP *hu, Uint8 how[3])
+static void HU_DrawGfx(Uint8 *surface, Uint32 *gfx, HEADSUP *hu)
 {
     Uint32      line;
     Uint8       *pos;
@@ -327,15 +317,9 @@ static void HU_DrawGfx(Uint8 *surface, Uint32 *gfx, HEADSUP *hu, Uint8 how[3])
         {
             if (line & 1)
             {
-                *(pos + 0) ^= how[0];
-                *(pos + 1) ^= how[0];
-                *(pos + 2) ^= how[0];
-                *(pos + 0) &= how[1];
-                *(pos + 1) &= how[1];
-                *(pos + 2) &= how[1];
-                *(pos + 0) |= how[2];
-                *(pos + 1) |= how[2];
-                *(pos + 2) |= how[2];
+                *(pos + 0) ^= 0xa0;
+                *(pos + 1) ^= 0xa0;
+                *(pos + 2) ^= 0xa0;
             }
         }
     }
@@ -345,19 +329,18 @@ static void HU_DrawText(Uint8 *surface, HEADSUP *hu, char *text)
 {
     for ( ; *text; text++, surface += hu->width * BPP)
     {
-        HU_DrawGfx(surface, dataCharset[*text - 32], hu, HU_GFX_INVERT);
+        HU_DrawGfx(surface, dataCharset[*text - 32], hu);
     }
 }
 
-static void HU_DrawNormal()
+static void HU_Draw(Uint8 *surface)
 {
-    Uint8       *surface = (Uint8 *)sdlSurface->pixels;
     int         i, k;
 
     if (huJoystickTimer > 0)
     {
         huJoystickTimer--;
-        HU_DrawGfx(surface, dataJoystick[joyType], &huJoystick[joyType], HU_GFX_INVERT);
+        HU_DrawGfx(surface, dataJoystick[joyType], &huJoystick[joyType]);
     }
 
     if (huProgramTimer > 0)
@@ -386,17 +369,6 @@ static void HU_DrawNormal()
     }
 }
 
-static void HU_DrawPaused()
-{
-    Uint8       *surface = (Uint8 *)sdlSurface->pixels;
-
-    if (drawPause == TRUE)
-    {
-        HU_DrawGfx(surface, dataPaused[0], &huPaused, HU_GFX_BLACK);
-        HU_DrawGfx(surface, dataPaused[1], &huPaused, HU_GFX_WHITE);
-    }
-}
-
 static void HU_Message(char *text, int time)
 {
     huMessageTimer = time;
@@ -421,16 +393,9 @@ static void DoEmulate()
     //SDL_LockAudioDevice(sdlAudioOut);
     SDL_LockTextureToSurface(texScreen, NULL, &sdlSurface);
     SPECTRUM_TVScan((Uint8 *)sdlSurface->pixels);
-    if (emuPaused == FALSE)
+    if (emuPaused == FALSE && rectScreenZoom == FALSE)
     {
-        if (rectScreenZoom == FALSE)
-        {
-            HU_DrawNormal();
-        }
-    }
-    else
-    {
-        HU_DrawPaused();
+        HU_Draw((Uint8 *)sdlSurface->pixels);
     }
     SDL_UnlockTexture(texScreen);
     //SDL_UnlockAudioDevice(sdlAudioOut);
@@ -438,6 +403,9 @@ static void DoEmulate()
     if (emuPaused == TRUE)
     {
         Emulate = DoNothing;
+        SDL_SetCursor(sdlCursorPause);
+        mouseHideTimer = MOUSE_TIMEOUT;
+        SDL_ShowCursor(SDL_TRUE);
     }
 }
 
@@ -445,6 +413,7 @@ static void DoUnpause()
 {
     emuPaused = FALSE;
     Emulate = DoEmulate;
+    SDL_SetCursor(SDL_GetDefaultCursor());
 }
 
 static void DoQuit()
@@ -532,8 +501,16 @@ static void Key_Input()
             break;
 
           case SDL_MOUSEMOTION:
-            mouseHideTimer = rectWindowZoom ? 0 : MOUSE_TIMEOUT;
-            SDL_ShowCursor(rectWindowZoom ? SDL_FALSE : SDL_TRUE);
+            if (rectWindowZoom && emuPaused == FALSE)
+            {
+                mouseHideTimer = 0;
+                SDL_ShowCursor(SDL_FALSE);
+            }
+            else if (mouseHideTimer == 0)
+            {
+                mouseHideTimer = MOUSE_TIMEOUT;
+                SDL_ShowCursor(SDL_TRUE);
+            }
             continue;
 
           case SDL_JOYBUTTONDOWN:
@@ -1033,10 +1010,6 @@ int main(int argc, char **argv)
         {
             help = 2;
         }
-        else if (strcmp(argv[arg], "-nopause") == 0)
-        {
-            drawPause = FALSE;
-        }
         else if (strcmp(argv[arg], "-vd") == 0 && arg < argc - 1)
        {
             arg++;
@@ -1137,6 +1110,8 @@ int main(int argc, char **argv)
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     texScreen = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
+    sdlCursorPause = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+
     want.freq = SAMPLERATE;
     want.format = AUDIO_S16SYS;
     want.samples = 512; // must be smaller than SAMPLERATE / 50 = 882
@@ -1181,7 +1156,7 @@ int main(int argc, char **argv)
 
         SDL_RenderPresent(sdlRenderer);
 
-        if (mouseHideTimer > 0)
+        if (mouseHideTimer > 0 && emuPaused == FALSE)
         {
             mouseHideTimer--;
             if (mouseHideTimer == 0)
@@ -1195,6 +1170,8 @@ int main(int argc, char **argv)
 
     SDL_CloseAudioDevice(sdlAudioOut);
     SDL_CloseAudioDevice(sdlAudioIn);
+
+    SDL_FreeCursor(sdlCursorPause);
 
     SDL_DestroyTexture(texScreen);
     SDL_DestroyTexture(texTarget);
