@@ -38,7 +38,7 @@ short       ulaPin[48];
 WORD        ulaAddress;
 BYTE        ulaDataIn, ulaDataOut;
 BYTE        ulaKeyData;
-int         ulaState;
+int         ulaAddState, ulaState;
 
 int ULA_Type(int mode)
 {
@@ -94,7 +94,7 @@ void ULA_Cycle()
 
     ULA_RAS = 0;
     ULA_CAS = 0;
-    ulaState = HIGH;
+    ulaAddState = HIGH;
 
     if (hc < 256 && vc < 192)
     {
@@ -109,12 +109,12 @@ void ULA_Cycle()
           case 2:
             ulaAddress = address[0];
             ULA_RAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 3:
             ULA_CAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 4:
@@ -124,7 +124,7 @@ void ULA_Cycle()
 
           case 5:
             ULA_CAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 6:
@@ -136,12 +136,12 @@ void ULA_Cycle()
             address[0]++;
             ulaAddress = address[0];
             ULA_RAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 7:
             ULA_CAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 8:
@@ -151,7 +151,7 @@ void ULA_Cycle()
 
           case 9:
             ULA_CAS = 1;
-            ulaState = LOW;
+            ulaAddState = LOW;
             break;
 
           case 10:

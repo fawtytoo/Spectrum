@@ -151,25 +151,21 @@ void SPECTRUM_TVScan(BYTE *screen)
         ULA_Cycle();
 
         // contended memory
-        memBankIndex = 1;
         MEM_WE = ULA_DRAMWE;
         MEM_RAS = ULA_RAS;
         MEM_CAS = ULA_CAS;
-        if (ulaState == LOW) // select address bus
+        if (ulaAddState == LOW) // ula has priority of contended memory
         {
-            memAddress = ulaAddress;
+            memAddress[1] = ulaAddress;
         }
-        else if (CPU_MREQ)
+        else if (ULA_RAS) // this allows the floating bus to work
         {
             // both HAL_VA15 and HAL_VA14 go via IC30
-            memAddress = (HAL_VA15 << 15) | (HAL_VA14 << 14) | pcfAddressOut[1];
+            memAddress[1] = (HAL_VA15 << 15) | (HAL_VA14 << 14) | pcfAddressOut[1];
             memDataIn = cpuData;
         }
-        MEM_Cycle();
-        if (ulaState == LOW && memState == LOW)
-        {
-            ulaDataIn = memDataOut;
-        }
+        MEM_Cycle(1);
+        ulaDataIn = memDataOut[1];
 
         CPU_CLK = ULA_PHICPU;
         CPU_INT = ULA_INT;
@@ -215,9 +211,9 @@ void SPECTRUM_TVScan(BYTE *screen)
             }
             else if (CPU_IORQ) // no response
             {
-                if (CPU_RD && memState == LOW)
+                if (CPU_RD && memState[1] == LOW)
                 {
-                    cpuData = memDataOut;
+                    cpuData = memDataOut[1];
                 }
                 else if (CPU_M1)
                 {
@@ -230,36 +226,26 @@ void SPECTRUM_TVScan(BYTE *screen)
             ULA_Write(cpuData);
 
             // memory
-            ROM_CE = ULA_ROMS;
+            ROM_CE = ULA_ROMS & (!BUS_ROMCS);
             ROM_OE = CPU_MREQ;
             ROM_A14 = MMU_Q4;
-            if (ROM_CE && ROM_OE)
-            {
-                if (!BUS_ROMCS)
-                {
-                    romAddress = cpuAddress & 0x3fff;
-                    ROM_Cycle();
-                    cpuData = romData;
-                }
-            }
-            else if (CPU_MREQ)
-            {
-                if (PCF_CAS) // uncontended memory
-                {
-                    memBankIndex = 0;
-                    MEM_WE = CPU_WR;
-                    MEM_RAS = CPU_MREQ;
-                    MEM_CAS = PCF_CAS;
-                    memAddress = pcfAddressOut[0];
-                    memDataIn = cpuData;
-                    MEM_Cycle();
-                }
+            romAddress = cpuAddress & 0x3fff;
+            ROM_Cycle();
 
-                // read from either uncontended or contended memory
-                if (memState == LOW)
-                {
-                    cpuData = memDataOut;
-                }
+            MEM_WE = CPU_WR;
+            MEM_RAS = CPU_MREQ;
+            MEM_CAS = PCF_CAS;
+            memAddress[0] = pcfAddressOut[0];
+            memDataIn = cpuData;
+            MEM_Cycle(0);
+
+            if ((romState | memState[0]) == LOW)
+            {
+                cpuData = romData & memDataOut[0];
+            }
+            else if (CPU_MREQ && ulaAddState == HIGH && memState[1] == LOW)
+            {
+                cpuData = memDataOut[1];
             }
 
             CPU_Cycle();

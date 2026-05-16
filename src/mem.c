@@ -28,6 +28,7 @@ static BYTE     romBank[2][M_16K];
 
 WORD            romAddress;
 BYTE            romData;
+int             romState;
 
 short           romPin[28];
 
@@ -42,10 +43,9 @@ BANK;
 
 static BANK     memBank[2];
 
-int             memBankIndex = 0;
-WORD            memAddress;
-BYTE            memDataIn, memDataOut;
-int             memState;
+WORD            memAddress[2];
+BYTE            memDataIn, memDataOut[2];
+int             memState[2];
 
 short           memPin[16];
 
@@ -63,7 +63,14 @@ WORD        pcfAddressOut[2];
 // rom -------------------------------------------------------------------------
 void ROM_Cycle()
 {
-    romData = romBank[ROM_A14][romAddress];
+    romData = 0xff;
+    romState = HIGH;
+
+    if (ROM_CE && ROM_OE)
+    {
+        romData = romBank[ROM_A14][romAddress];
+        romState = LOW;
+    }
 }
 
 void ROM_Load(BYTE *data, int size)
@@ -77,28 +84,28 @@ void ROM_Load(BYTE *data, int size)
 }
 
 // memory ----------------------------------------------------------------------
-void MEM_Cycle()
+void MEM_Cycle(int index)
 {
-    BANK    *bank = &memBank[memBankIndex];
+    BANK    *bank = &memBank[index];
 
-    memDataOut = 0xff;
-    memState = HIGH;
+    memDataOut[index] = 0xff;
+    memState[index] = HIGH;
 
     if (MEM_RAS)
     {
-        bank->row = memAddress & 0x00ff;
+        bank->row = memAddress[index] & 0x00ff;
     }
     if (MEM_CAS)
     {
-        bank->column = memAddress & 0xff00;
+        bank->column = memAddress[index] & 0xff00;
         if (MEM_WE)
         {
             *(bank->bank + bank->column + bank->row) = memDataIn;
         }
         else
         {
-            memDataOut = *(bank->bank + bank->column + bank->row);
-            memState = LOW;
+            memDataOut[index] = *(bank->bank + bank->column + bank->row);
+            memState[index] = LOW;
         }
     }
 }

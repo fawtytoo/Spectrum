@@ -24,15 +24,15 @@
 // memory ----------------------------------------------------------------------
 extern WORD     romAddress;
 extern BYTE     romData;
+extern int      romState;
 
 void ROM_Cycle(void);
 
-extern WORD     memAddress;
-extern BYTE     memDataIn, memDataOut;
-extern int      memState;
-extern int      memBankIndex;
+extern WORD     memAddress[2];
+extern BYTE     memDataIn, memDataOut[2];
+extern int      memState[2];
 
-void MEM_Cycle(void);
+void MEM_Cycle(int);
 
 void HAL_Cycle(void);
 
@@ -53,7 +53,7 @@ void CPU_Cycle(void);
 extern WORD     ulaAddress;
 extern BYTE     ulaDataIn, ulaDataOut;
 extern BYTE     ulaKeyData;
-extern int      ulaState;
+extern int      ulaAddState, ulaState;
 
 void ULA_Cycle(void);
 void ULA_Read(void);
