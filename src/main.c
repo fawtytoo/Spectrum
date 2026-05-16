@@ -723,7 +723,7 @@ static void Key_Input()
             break;
         }
 
-        if (state == 0)
+        if (state == 0 || event.key.repeat)
         {
             continue;
         }
