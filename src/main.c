@@ -617,7 +617,6 @@ static void Key_Input()
         if (emuPaused == TRUE && state == 1 && sym != SDLK_PAUSE && sym != SDLK_F10 && sym != SDLK_F11)
         {
             DoUnpause();
-            continue;
         }
 
         switch (sym)
