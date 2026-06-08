@@ -423,7 +423,7 @@ static void DoEmulate()
         Emulate = DoNothing;
         SDL_SetCursor(sdlCursorPause);
         mouseHideTimer = MOUSE_TIMEOUT;
-        SDL_ShowCursor(SDL_TRUE);
+        SDL_ShowCursor(SDL_ENABLE);
     }
 }
 
@@ -522,12 +522,12 @@ static void Key_Input()
             if (rectWindowZoom && emuPaused == FALSE)
             {
                 mouseHideTimer = 0;
-                SDL_ShowCursor(SDL_FALSE);
+                SDL_ShowCursor(SDL_DISABLE);
             }
             else if (mouseHideTimer == 0)
             {
                 mouseHideTimer = MOUSE_TIMEOUT;
-                SDL_ShowCursor(SDL_TRUE);
+                SDL_ShowCursor(SDL_ENABLE);
             }
             continue;
 
