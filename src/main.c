@@ -140,6 +140,13 @@ static HEADSUP              huMessage =
 static char                 *huMessageText = TITLE;
 static int                  huMessageTimer = 0;
 
+static Uint32       huJoystickGfx[5][246] =
+{
+    {SINCLAIR}, {CURSOR}, {KEMPSTON}, {FULLER}, {PROGRAM}
+};
+
+static Uint32       huCharSet[96][8] = {CHARSET};
+
 // keyboard --------------------------------------------------------------------
 void (*Keyboard_Input)(int, int) = SPECTRUM_Keyboard;
 
@@ -347,7 +354,7 @@ static void HU_DrawText(Uint8 *surface, HEADSUP *hu, char *text)
 {
     for ( ; *text; text++, surface += hu->width * BPP)
     {
-        HU_DrawGfx(surface, dataCharset[*text - 32], hu);
+        HU_DrawGfx(surface, huCharSet[*text - 32], hu);
     }
 }
 
@@ -358,7 +365,7 @@ static void HU_Draw(Uint8 *surface)
     if (huJoystickTimer > 0)
     {
         huJoystickTimer--;
-        HU_DrawGfx(surface, dataJoystick[joyType], &huJoystick[joyType]);
+        HU_DrawGfx(surface, huJoystickGfx[joyType], &huJoystick[joyType]);
     }
 
     if (huProgramTimer > 0)
