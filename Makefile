@@ -1,5 +1,7 @@
 TARGET = spectrum
 
+LOCAL = ~/.local
+
 CC = gcc
 
 CFLAGS = -g -Wall -MMD
@@ -18,6 +20,12 @@ $(O)/%.o:	$(SRC)/%.c
 
 clean:
 	rm -rf $(O) $(TARGET)
+
+install: all
+	cp $(TARGET) $(LOCAL)/bin/
+
+uninstall:
+	rm $(LOCAL)/bin/$(TARGET)
 
 dir:
 	@mkdir -p $(O)
