@@ -2,9 +2,7 @@
 
 ## About
 
-This is a Sinclair ZX Spectrum emulator for the 48K and 128K models.
-- 48K (issue 5)
-- 128K (toast-rack)
+This is a Sinclair ZX Spectrum 128K emulator.
 
 The emulator is cycle based to provide the greatest accuracy.
 However, there is an issue concerning contention that needs to be addressed.
@@ -34,7 +32,6 @@ There is support for 5 joysticks:
 
 ## AY-3-8192
 
-This is permanently enabled and works for both 48K and 128K models.
 Supports both stereo and mono configurations:
 - ABC stereo
 - ACB stereo
@@ -53,7 +50,6 @@ filing system to prevent accidental corruption.
 
 ## Command line options
 ```
-    -rom FILE  - 48K/128K/cartridge ROM filename
     -fs        - Start fullscreen
     -ws n      - Window scale (default: 2)
     -keys      - List emulator function keys
