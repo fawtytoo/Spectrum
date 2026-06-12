@@ -17,6 +17,7 @@
 //  3. This notice may not be removed or altered from any source distribution.
 
 #include "types.h"
+#include "rom.h"
 
 #include "mem.h"
 
@@ -24,7 +25,7 @@
 #define M_16K       (1 << 14)
 
 // rom -------------------------------------------------------------------------
-static BYTE     romBank[2][M_16K];
+static BYTE     romBank[2][M_16K] = {{ROM1}, {ROM2}};
 
 WORD            romAddress;
 BYTE            romData;
@@ -70,16 +71,6 @@ void ROM_Cycle()
     {
         romData = romBank[ROM_A14][romAddress];
         romState = LOW;
-    }
-}
-
-void ROM_Load(BYTE *data, int size)
-{
-    BYTE    *rom = romBank[0];
-
-    while (size--)
-    {
-        *rom++ = *data++;
     }
 }
 

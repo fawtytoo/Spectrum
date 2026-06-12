@@ -76,8 +76,8 @@ static int                  mouseHideTimer = MOUSE_TIMEOUT;
 #define TEXT_ULA_128K       "128K video mode"
 
 static int                  vSync = FALSE; // for video syncing
-static int                  ulaType = ULA_48K;
-static char                 *ulaText = TEXT_ULA_48K;
+static int                  ulaType = ULA_128K;
+static char                 *ulaText = TEXT_ULA_128K;
 
 // audio -----------------------------------------------------------------------
 #define TEXT_AY_ABC         "A            B            C"
@@ -978,46 +978,13 @@ int main(int argc, char **argv)
     int                 scale = 2;      // initial scale of window
     int                 arg;
     int                 help = 0;
-    char                *file = "NONE"; // rom file
-    BYTE                *rom;           // rom data
-    int                 size = 0;       // rom size
     char                *driver = "";
 
     SYS_Print(TITLE" v1.0.1 ("__DATE__")");
 
     for (arg = 1; arg < argc; arg++)
     {
-        if (arg < argc - 1 && strcmp(argv[arg], "-rom") == 0)
-        {
-            arg++;
-
-            if (size > 0)
-            {
-                SYS_Print("\n Too many ROMs specified");
-                help = 1;
-                break;
-            }
-            if (FILE_Check(argv[arg], &size) == TRUE)
-            {
-                if (size == 16384 || size == 32768)
-                {
-                    file = argv[arg];
-                }
-                else
-                {
-                    SYS_Print("\n %s", argv[arg]);
-                    SYS_Print(" ROM size incorrect: %i", size);
-                    return 2;
-                }
-            }
-            else
-            {
-                SYS_Print("\n %s", argv[arg]);
-                SYS_Print(" Not a file!");
-                return 2;
-            }
-        }
-        else if (strcmp(argv[arg], "-fs") == 0)
+        if (strcmp(argv[arg], "-fs") == 0)
         {
             rectWindowZoom = 1;
         }
@@ -1051,7 +1018,7 @@ int main(int argc, char **argv)
         HELP(fnKey, KEY_COUNT);
     }
 
-    if (help == 1 || size == 0)
+    if (help == 1)
     {
         SYS_Print("\nCommand line options:");
         HELP(emuHelp, HELP_COUNT);
@@ -1103,19 +1070,6 @@ int main(int argc, char **argv)
         SDL_Quit();
         return 1;
     }
-
-    rom = FILE_Read(file, size);
-    ROM_Load(rom, size);
-    SYS_Free(rom);
-    SYS_Print("\nLoaded ROM: %s", GetName(file));
-    SYS_Print(" Size: %iK", size / 1024);
-    if (size == 32768)
-    {
-        ulaType = ULA_128K;
-        ulaText = TEXT_ULA_128K;
-    }
-    SYS_Print("\nStarted in %s", ulaText);
-    TAPE_RomLock(size);
 
     signal(SIGINT, DoQuit);
 

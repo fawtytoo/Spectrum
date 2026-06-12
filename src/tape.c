@@ -407,9 +407,6 @@ int TAPE_FastSpeed()
 // fast loading/saving ---------------------------------------------------------
 #include "bus.h"
 
-#define ROM_48K         0
-#define ROM_128K        1
-
 #define TAPE_DATA       0x0000
 
 static BYTE     tapeRom[0x4000] =
@@ -425,15 +422,13 @@ static BYTE     tapeRom[0x4000] =
     0xdd, 0x23, 0x1b, 0x7a, 0xb3, 0x20, 0xf1, 0x3a, 0x00, 0x00, 0xa9, 0xc0, 0x37, 0xc9
 };
 
-static int      romType = ROM_48K;
-
 void TAPE_Cycle()
 {
-    static BYTE     rom = 0x10; // assume 48k rom
+    static BYTE     rom = 0x00; // assume 128k rom
     static int      ff1 = 0, ff2 = 0, rcvd = 0;
     static BYTE     size[2];
 
-    if (romType == ROM_128K && BUS_IORQ && BUS_WR && (!BUS_A15) && (!BUS_A1))
+    if (BUS_IORQ && BUS_WR && (!BUS_A15) && (!BUS_A1))
     {
         // we need to monitor if the 128k roms swap
         //  as we should only override the subroutines in the 48k rom
@@ -510,13 +505,5 @@ void TAPE_Cycle()
                 *curBlock->pos++ = busDataIn;
             }
         }
-    }
-}
-
-void TAPE_RomLock(int size)
-{
-    if (size == 32768)
-    {
-        romType = ROM_128K;
     }
 }

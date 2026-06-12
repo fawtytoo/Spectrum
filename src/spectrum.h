@@ -114,9 +114,6 @@ void SPECTRUM_JoystickSelect(int);
 int SPECTRUM_GetJoyKey(int, int);
 void SPECTRUM_SetJoyKey(int, int, int);
 
-// MEMORY
-void ROM_Load(BYTE *, int);
-
 // tape
 void TAPE_Load(BYTE *, int, int);
 int TAPE_BlockCount(void);
@@ -129,7 +126,6 @@ int TAPE_FastSpeed(void);
 int TAPE_Ended(void);
 int TAPE_Loaded(void);
 void TAPE_Cycle(void);
-void TAPE_RomLock(int);
 
 // these functions are supplied by main.c
 void FILE_Write(BYTE *, WORD);
