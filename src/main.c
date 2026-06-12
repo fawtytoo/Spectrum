@@ -33,6 +33,7 @@
 #define VIEWHEIGHT          264
 
 #define TITLE               "ZX Spectrum"
+#define EMBLEM              "\e[91m◢\e[103m◤\e[92m◢\e[106m◤\e[0m\e[96m◤\e[0m"
 
 typedef void (*EVENT)(void);
 
@@ -980,7 +981,7 @@ int main(int argc, char **argv)
     int                 help = 0;
     char                *driver = "";
 
-    SYS_Print(TITLE" v1.0.1 ("__DATE__")");
+    SYS_Print(TITLE" "EMBLEM" v1.0.1 ("__DATE__")");
 
     for (arg = 1; arg < argc; arg++)
     {
