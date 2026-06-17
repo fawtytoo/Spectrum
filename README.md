@@ -41,6 +41,9 @@ Supports both stereo and mono configurations:
 Tape loading can be either from an external source via the mic socket on your
 computer or through the emulators drag 'n drop support.
 
+The only tape file format supported is .tap files. This is the only format to
+fully support flash loading/saving.
+
 Tape saving is accomplished similarly either through the headphone socket or via
 drag 'n drop. If saving to a file, data is ALWAYS appended (corrupted files are
 treated as read-only).
@@ -71,15 +74,6 @@ There are no plans to support the X/Y flags.
 
 This emulator is for the best of the Sinclair models only.
 There will be no plans to add anything else.
-
-### Tape formats
-
-Currently, the only tape file format supported is .tap files.
-
-There are some plans for a new format to accommodate both audio and data formats.
-This will cleanly allow for both the standard ROM load/save format, and for a
-compressed audio format as an alternative for .tzx/.pzx file formats.
-If this goes ahead, CLI tools will be supplied for converting to the new format.
 
 ### Windows support
 
