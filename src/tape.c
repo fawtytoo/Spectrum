@@ -138,7 +138,7 @@ short TAPE_Input(short out)
         return out;
     }
 
-    if (pulseDo.lambda-- == 0)
+    if (--pulseDo.lambda == 0)
     {
         pulseWave ^= 1;
         pulseDo.lambda = curPulse->lambda;
