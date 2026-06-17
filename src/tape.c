@@ -329,8 +329,9 @@ int TAPE_Rewind(int index)
         curBlock = curBlock->prev;
     }
 
+    pulseDo.lambda = 1;
+    pulseDo.repeat = 1;
     pulseStage = 0;
-    CheckPulse();
 
     if (curBlock->index == 1 && index == 0)
     {
@@ -356,8 +357,9 @@ int TAPE_FastForward()
         return curBlock->index;
     }
 
+    pulseDo.lambda = 1;
+    pulseDo.repeat = 1;
     pulseStage = 0;
-    CheckPulse();
 
     return curBlock->index;
 }
