@@ -93,10 +93,18 @@ static BYTE         discard; // unwanted key data
 static BYTE         *keyData[2] = {&ulaKeyData, &discard};
 
 // joystick --------------------------------------------------------------------
-static int      joyMap[2][5] =
+static int      joyMap[2][6] =
 {
-    {KEY_P, KEY_O, KEY_A, KEY_Q, KEY_SP},
-    {KEY_8, KEY_5, KEY_6, KEY_7, KEY_0}
+    {KEY_P, KEY_O, KEY_A, KEY_Q, KEY_SP, 40},
+    {KEY_8, KEY_5, KEY_6, KEY_7, KEY_0,  40}
+};
+
+static int      joyData[40][2] =
+{
+    {1, 4}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {1, 1}, {1, 2}, {1, 3}, {1, 0}, {0, 5},
+    {0, 2}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5},
+    {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 1}, {0, 0}, {0, 3}, {0, 5}, {0, 5}, {0, 5},
+    {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 5}, {0, 4}, {0, 5}
 };
 
 void (*SPECTRUM_Joystick)(int, int, int) = Sinclair_Input;
@@ -458,6 +466,12 @@ int SPECTRUM_GetJoyKey(int joy, int bit)
 
 void SPECTRUM_SetJoyKey(int joy, int bit, int key)
 {
+    joyMap[joyData[key][0]][joyData[key][1]] = joyMap[joy][bit];
+    joyData[joyMap[joy][bit]][0] = joyData[key][0];
+    joyData[joyMap[joy][bit]][1] = joyData[key][1];
+
+    joyData[key][0] = joy;
+    joyData[key][1] = bit;
     joyMap[joy][bit] = key;
 }
 
