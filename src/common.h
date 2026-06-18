@@ -69,7 +69,7 @@ void PSG_Write(BYTE);
 void PSG_Cycle(void);
 
 // tape ------------------------------------------------------------------------
-short TAPE_Input(short);
+short TAPE_Input(void);
 
 // joysticks -------------------------------------------------------------------
 void Sinclair_Input(int, int, int);

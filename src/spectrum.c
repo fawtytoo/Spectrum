@@ -322,12 +322,12 @@ void SPECTRUM_TVScan(BYTE *screen)
         // tape input
         if (Timer_Update(&timerTape)) // maintain constant tape speed
         {
-            tape = TAPE_Input(ULA_MIC >> 2); // speaker bit as input
+            tape = TAPE_Input();
         }
 
         ULA_EAR = BUFFER(audioInput, read) | tape;
 
-        beep = ULA_MIC | (ULA_EAR << 1);
+        beep = ULA_MIC | (ULA_EAR << 1); // speaker[2] + tape[1] + mic[0]
 
         // downsample audio to SAMPLERATE
         if (Timer_Update(&timerAudio) == 0)

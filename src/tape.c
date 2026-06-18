@@ -131,20 +131,18 @@ static void CheckPulse()
     }
 }
 
-short TAPE_Input(short out)
+short TAPE_Input()
 {
-    if (tapeLoaded == FALSE || tapePlaying == FALSE || tapeFastSpeed == TRUE)
+    if (tapeLoaded == TRUE && tapePlaying == TRUE && tapeFastSpeed == FALSE)
     {
-        return out;
-    }
-
-    if (--pulseDo.lambda == 0)
-    {
-        pulseWave ^= 1;
-        pulseDo.lambda = curPulse->lambda;
-        if (--pulseDo.repeat == 0)
+        if (--pulseDo.lambda == 0)
         {
-            CheckPulse();
+            pulseWave ^= 1;
+            pulseDo.lambda = curPulse->lambda;
+            if (--pulseDo.repeat == 0)
+            {
+                CheckPulse();
+            }
         }
     }
 
