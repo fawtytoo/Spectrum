@@ -322,7 +322,7 @@ int TAPE_Rewind(int index)
     {
         curBlock = tapeBlock.next;
     }
-    else if (curBlock->pos == curBlock->data && curBlock->prev->index > 0)
+    else if ((curBlock->pos == curBlock->data || pulseStage == 0) && curBlock->prev->index > 0)
     {
         curBlock = curBlock->prev;
     }
