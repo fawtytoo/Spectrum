@@ -118,19 +118,22 @@ static HEADSUP              huJoystick[5] =
 };
 static int                  huJoystickTimer = 0;
 
-static HEADSUP              huProgram[11] =
+static HEADSUP          huJoyButton[10] =
 {
     {.width = 8, .height = 16, .pos = 29 * WIDTH + 64},
     {.width = 8, .height = 16, .pos = 47 * WIDTH + 64},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 46},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 82},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 112},
-    {.width = 8, .height = 16, .pos = 29 * WIDTH + 240},
-    {.width = 8, .height = 16, .pos = 47 * WIDTH + 240},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 222},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 258},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 288},
-    {.width = 8, .height = 16, .pos = 38 * WIDTH + 140}
+    {.width = 8, .height = 16, .pos = 38 * WIDTH + 48},
+    {.width = 8, .height = 16, .pos = 38 * WIDTH + 80},
+    {.width = 8, .height = 16, .pos = 47 * WIDTH + 104},
+    {.width = 8, .height = 16, .pos = 29 * WIDTH + 288},
+    {.width = 8, .height = 16, .pos = 47 * WIDTH + 288},
+    {.width = 8, .height = 16, .pos = 38 * WIDTH + 272},
+    {.width = 8, .height = 16, .pos = 38 * WIDTH + 304},
+    {.width = 8, .height = 16, .pos = 47 * WIDTH + 248}
+};
+static HEADSUP          huProgram =
+{
+    .width = 8, .height = 16, .pos = 38 * WIDTH + 140
 };
 static int                  huProgramTimer = 0;
 
@@ -159,23 +162,16 @@ static int      joyType = JOY_CURSOR;
 #define TEXT_JOY1       "Press ESC to skip joystick 1"
 #define TEXT_JOY2       "Press ESC to skip joystick 2"
 
-typedef struct
+static char     *keyName[40] =
 {
-    char    *name;
-    int     offset;
-}
-KEY;
-
-static KEY      keyName[40] =
-{
-    {"0", 4}, {"1", 4}, {"2", 4}, {"3", 4}, {"4", 4}, {"5", 4}, {"6", 4}, {"7", 4}, {"8", 4}, {"9", 4},
-    {"A", 4}, {"B", 4}, {"C", 4}, {"D", 4}, {"E", 4}, {"F", 4}, {"G", 4}, {"H", 4}, {"I", 4}, {"J", 4},
-    {"K", 4}, {"L", 4}, {"M", 4}, {"N", 4}, {"O", 4}, {"P", 4}, {"Q", 4}, {"R", 4}, {"S", 4}, {"T", 4},
-    {"U", 4}, {"V", 4}, {"W", 4}, {"X", 4}, {"Y", 4}, {"Z", 4}, {"CS", 0}, {"SS", 0}, {"Sp", 0}, {"En", 0}
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+    "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+    "U", "V", "W", "X", "Y", "Z", "{", "|", "}", "~"
 };
 
 static int      joyMap[5] = {JOY_UP, JOY_DOWN, JOY_LEFT, JOY_RIGHT, JOY_FIRE};
-static char     *joyStageName[10] = {"< UP", "< DOWN", "< LEFT", "< RIGHT", "< FIRE", "     UP >", "   DOWN >", "   LEFT >", "  RIGHT >", "   FIRE >"};
+static char     *joyJoyName[2] = {"< Joy 1", "  Joy 2 >"};
 static int      joyProgramChange = FALSE;
 static int      joyProgramStage = 0;
 
@@ -361,6 +357,7 @@ static void HU_DrawText(Uint8 *surface, HEADSUP *hu, char *text)
 
 static void HU_Draw(Uint8 *surface)
 {
+    static int  flash = 0;
     int         i, k;
 
     if (huJoystickTimer > 0)
@@ -374,14 +371,18 @@ static void HU_Draw(Uint8 *surface)
         huProgramTimer--;
         for (i = 0; i < 10; i++)
         {
-            k = SPECTRUM_GetJoyKey(i / 5, joyMap[i % 5]);
-            HU_DrawText(surface + keyName[k].offset * BPP, &huProgram[i], keyName[k].name);
+            if (joyProgramChange == FALSE || i != joyProgramStage || (flash & 16))
+            {
+                k = SPECTRUM_GetJoyKey(i / 5, joyMap[i % 5]);
+                HU_DrawText(surface, &huJoyButton[i], keyName[k]);
+            }
         }
+        flash++;
 
         if (joyProgramChange == TRUE)
         {
             huProgramTimer++;
-            HU_DrawText(surface, &huProgram[10], joyStageName[joyProgramStage]);
+            HU_DrawText(surface, &huProgram, joyJoyName[joyProgramStage / 5]);
         }
     }
 
