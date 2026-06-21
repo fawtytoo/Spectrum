@@ -56,8 +56,6 @@ extern BYTE     ulaKeyData;
 extern int      ulaAddState, ulaState;
 
 void ULA_Cycle(void);
-void ULA_Read(void);
-void ULA_Write(BYTE);
 int ULA_Type(int);
 
 // PSG -------------------------------------------------------------------------

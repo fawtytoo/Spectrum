@@ -48,28 +48,6 @@ int ULA_Type(int mode)
     return ulaCur->width * ulaCur->height;
 }
 
-void ULA_Read()
-{
-    ulaDataOut = 0xff;
-    ulaState = HIGH;
-
-    if (ULA_IORQ && ULA_RD)
-    {
-        ulaDataOut = 0b10100000 | (ULA_EAR << 6) | ulaKeyData;
-        ulaState = LOW;
-    }
-}
-
-void ULA_Write(BYTE data)
-{
-    if (ULA_IORQ && ULA_WR)
-    {
-        ulaBorder[0] = data & 7;
-        data >>= 3;
-        ULA_MIC = ((data & 2) << 1) | (data & 1);
-    }
-}
-
 void ULA_Cycle()
 {
     static int      hc = 0, vc = 0;
@@ -190,6 +168,22 @@ void ULA_Cycle()
     ULA_CAS |= (ULA_PHICPU & ULA_MREQ & ULA_A14);
     ULA_DRAMWE = ULA_PHICPU & ULA_MREQ & ULA_WR & ULA_A14;
     ULA_ROMS = (!ULA_A14) & (!ULA_A15) & ULA_RD;
+
+    ulaDataOut = 0xff;
+    ulaState = HIGH;
+    if (ULA_IORQ)
+    {
+        if (ULA_RD)
+        {
+            ulaDataOut = 0b10100000 | (ULA_EAR << 6) | ulaKeyData;
+            ulaState = LOW;
+        }
+        else if (ULA_WR)
+        {
+            ulaBorder[0] = ulaDataIn & 7;
+            ULA_MIC = (((ulaDataIn & 16) << 1) | (ulaDataIn & 8)) >> 3;
+        }
+    }
 
     if (draw == 0)
     {

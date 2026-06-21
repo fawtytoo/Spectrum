@@ -173,7 +173,14 @@ void SPECTRUM_TVScan(BYTE *screen)
             memDataIn = cpuData;
         }
         MEM_Cycle(1);
-        ulaDataIn = memDataOut[1];
+        if (ulaAddState == LOW && memState[1] == LOW)
+        {
+            ulaDataIn = memDataOut[1];
+        }
+        else
+        {
+            ulaDataIn = cpuData;
+        }
 
         CPU_CLK = ULA_PHICPU;
         CPU_INT = ULA_INT;
@@ -208,9 +215,6 @@ void SPECTRUM_TVScan(BYTE *screen)
             Fuller_Read();
             TAPE_Cycle();
 
-            // ... then internal
-            ULA_Read();
-
             if ((psgState | ulaState | busState) == LOW)
             {
                 cpuData = psgDataOut & ulaDataOut & busDataOut;
@@ -226,9 +230,6 @@ void SPECTRUM_TVScan(BYTE *screen)
                     cpuData = busDataOut;
                 }
             }
-
-            // io writing
-            ULA_Write(cpuData);
 
             // memory
             ROM_CE = ULA_ROMS & (!BUS_ROMCS);
