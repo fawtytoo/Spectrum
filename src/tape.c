@@ -31,9 +31,9 @@ PULSE;
 static PULSE            pulsePilot[2] = {{2168, 8064}, {2168, 3224}};
 static PULSE            pulseSync1 = {667, 1}, pulseSync2 = {735, 1};
 static PULSE            pulseBit[2] = {{855, 2}, {1710, 2}};
-static PULSE            pulseSilence[2] = {{SECOND, 1}, {SECOND * 2, 1}};
+static PULSE            pulseSilence = {SECOND, 1};
 static PULSE            pulseDo = {1, 1};
-static PULSE            *curPulse = &pulseSilence[0];
+static PULSE            *curPulse = &pulseSilence;
 
 static int              pulseStage = 0;
 static short            pulseWave = 0;
@@ -86,6 +86,7 @@ static void CheckPulse()
     if (pulseStage == 0)
     {
         CURPULSE(pulsePilot[curBlock->id]);
+        pulseSilence.lambda = curBlock->id == 0 ? SECOND : SECOND * 2;
         pulseWave = 0;
         pulseStage = 1;
 
@@ -125,7 +126,7 @@ static void CheckPulse()
         }
         else
         {
-            CURPULSE(pulseSilence[curBlock->prev->id]);
+            CURPULSE(pulseSilence);
             pulseStage = 0;
         }
     }
