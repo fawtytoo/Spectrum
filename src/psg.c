@@ -103,7 +103,7 @@ static const int    psgDigitalToAnalog[16] = {45, 63, 90, 127, 181, 255, 362, 51
 
 // external --------------------------------------------------------------------
 short       psgPin[28];
-BYTE        psgDataOut;
+BYTE        psgDataIn, psgDataOut;
 int         psgState;
 
  // registers ------------------------------------------------------------------
@@ -184,23 +184,52 @@ static int PSG_Generate(PSGCHAN *chan, BYTE mixer)
 // cycle -----------------------------------------------------------------------
 void PSG_Cycle()
 {
-    int     reset = !PSG_RESET;
     int     bit;
 
-    psgData[REG_A_L] *= reset;
-    psgData[REG_A_H] *= reset;
-    psgData[REG_B_L] *= reset;
-    psgData[REG_B_H] *= reset;
-    psgData[REG_C_L] *= reset;
-    psgData[REG_C_H] *= reset;
-    psgData[REG_NOISE] *= reset;
-    psgData[REG_MIXER] *= reset;
-    psgData[REG_A_VOL] *= reset;
-    psgData[REG_B_VOL] *= reset;
-    psgData[REG_C_VOL] *= reset;
-    psgData[REG_ENV_L] *= reset;
-    psgData[REG_ENV_H] *= reset;
-    psgData[REG_ENV_SHAPE] *= reset;
+    if (PSG_RESET)
+    {
+        psgData[REG_A_L] = 0;
+        psgData[REG_A_H] = 0;
+        psgData[REG_B_L] = 0;
+        psgData[REG_B_H] = 0;
+        psgData[REG_C_L] = 0;
+        psgData[REG_C_H] = 0;
+        psgData[REG_NOISE] = 0;
+        psgData[REG_MIXER] = 0;
+        psgData[REG_A_VOL] = 0;
+        psgData[REG_B_VOL] = 0;
+        psgData[REG_C_VOL] = 0;
+        psgData[REG_ENV_L] = 0;
+        psgData[REG_ENV_H] = 0;
+        psgData[REG_ENV_SHAPE] = 0;
+        psgEnvLambda = 0;
+        psgEnvPos = 0;
+        return;
+    }
+
+    psgDataOut = 0xff;
+    psgState = HIGH;
+    if (PSG_BDIR)
+    {
+        if (PSG_BC1)
+        {
+            PSG_Register(psgDataIn);
+        }
+        else
+        {
+            PSG_SetData(psgDataIn);
+        }
+    }
+    else if (PSG_BC1)
+    {
+        psgDataOut = psgData[psgRegister];
+        psgState = LOW;
+    }
+
+    if (!PSG_CLOCK)
+    {
+        return;
+    }
 
     if (psgNoiseLambda == 0)
     {
@@ -210,9 +239,6 @@ void PSG_Cycle()
         psgNoisePhase ^= bit;
     }
     psgNoiseLambda--;
-
-    psgEnvLambda *= reset;
-    psgEnvPos *= reset;
 
     if (psgEnvLambda == 0)
     {
@@ -229,31 +255,4 @@ void PSG_Cycle()
     PSG_A = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_A], psgData[REG_MIXER])];
     PSG_B = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_B], psgData[REG_MIXER] >> 1)];
     PSG_C = psgDigitalToAnalog[PSG_Generate(&psgChan[CHAN_C], psgData[REG_MIXER] >> 2)];
-}
-
-void PSG_Read()
-{
-    psgDataOut = 0xff;
-    psgState = HIGH;
-
-    if (PSG_BC1 && (!PSG_BDIR))
-    {
-        psgDataOut = psgData[psgRegister];
-        psgState = LOW;
-    }
-}
-
-void PSG_Write(BYTE data)
-{
-    if (PSG_BDIR)
-    {
-        if (PSG_BC1)
-        {
-            PSG_Register(data);
-        }
-        else
-        {
-            PSG_SetData(data);
-        }
-    }
 }

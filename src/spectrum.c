@@ -179,7 +179,6 @@ void SPECTRUM_TVScan(BYTE *screen)
         CPU_INT = ULA_INT;
         CPU_RESET = BUS_RESET;
         MMU_CLR = BUS_RESET;
-        PSG_RESET = BUS_RESET;
         if (CPU_CLK || BUS_RESET)
         {
             // io reading
@@ -210,7 +209,6 @@ void SPECTRUM_TVScan(BYTE *screen)
             TAPE_Cycle();
 
             // ... then internal
-            PSG_Read();
             ULA_Read();
 
             if ((psgState | ulaState | busState) == LOW)
@@ -230,7 +228,6 @@ void SPECTRUM_TVScan(BYTE *screen)
             }
 
             // io writing
-            PSG_Write(cpuData);
             ULA_Write(cpuData);
 
             // memory
@@ -292,9 +289,6 @@ void SPECTRUM_TVScan(BYTE *screen)
             PCF_WR = CPU_WR;
             PCF_Cycle();
 
-            PSG_BDIR = HAL_PSG & (!CPU_RD);
-            PSG_BC1 = HAL_PSG & CPU_A14;
-
             ulaKeyData = 0b00011111;
             *keyData[CPU_A8] &= keyRow[0];
             *keyData[CPU_A9] &= keyRow[1];
@@ -307,10 +301,11 @@ void SPECTRUM_TVScan(BYTE *screen)
         }
 
         PSG_CLOCK = ULA_C;
-        if (PSG_CLOCK || PSG_RESET)
-        {
-            PSG_Cycle();
-        }
+        PSG_RESET = BUS_RESET;
+        PSG_BDIR = HAL_PSG & (!CPU_RD);
+        PSG_BC1 = HAL_PSG & CPU_A14;
+        psgDataIn = cpuData;
+        PSG_Cycle();
 
         // the bus reset line should ideally be reset externally
         //  but there is no way to inject that whilst in this loop

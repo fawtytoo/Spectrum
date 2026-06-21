@@ -61,11 +61,9 @@ void ULA_Write(BYTE);
 int ULA_Type(int);
 
 // PSG -------------------------------------------------------------------------
-extern BYTE     psgDataOut;
+extern BYTE     psgDataIn, psgDataOut;
 extern int      psgState;
 
-void PSG_Read(void);
-void PSG_Write(BYTE);
 void PSG_Cycle(void);
 
 // tape ------------------------------------------------------------------------
