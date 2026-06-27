@@ -190,7 +190,7 @@ static int                  tapeReadOnly;
 // help ------------------------------------------------------------------------
 #define HELP(s, c)      for (arg = 0; arg < c; arg++) { SYS_Print(" %-10s - %s", s[arg].name, s[arg].description); }
 
-#define HELP_COUNT      5
+#define HELP_COUNT      4
 #define KEY_COUNT       16
 
 typedef struct
@@ -202,7 +202,6 @@ OPTION;
 
 static OPTION           emuHelp[HELP_COUNT] =
 {
-    {"-rom FILE", "48K/128K/cartridge ROM filename"},
     {"-fs", "Start fullscreen"},
     {"-ws n", "Window scale"},
     {"-keys", "Print emulator function keys"},
