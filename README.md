@@ -22,8 +22,7 @@ Designed to be as simple to use as possible:
 - Function keys F1-F12 for external interaction
 
 ## Joysticks
-
-There is support for 5 joysticks:
+Use your favourite USB joystick, gampad or the keyboard (Cursor keys & TAB).
 - Sinclair interface 2 (both players)
 - Cursor
 - Kempston
