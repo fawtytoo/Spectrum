@@ -759,14 +759,11 @@ static void Key_Input()
             break;
 
           case SDLK_F1:
-            if (TAPE_Loaded() == TRUE)
+            if (again == TRUE)
             {
-                if (again == TRUE)
-                {
-                    TAPE_SpeedToggle();
-                }
-                HU_Message(TAPE_FastSpeed() == TRUE ? "Fast tape speed" : "Normal tape speed", HU_TIMEOUT);
+                TAPE_SpeedToggle();
             }
+            HU_Message(TAPE_FastSpeed() == TRUE ? "Fast tape speed" : "Normal tape speed", HU_TIMEOUT);
             break;
 
           case SDLK_F2:

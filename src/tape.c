@@ -402,7 +402,7 @@ void TAPE_SpeedToggle()
 
 int TAPE_FastSpeed()
 {
-    return tapeLoaded == TRUE && tapeFastSpeed == TRUE;
+    return tapeFastSpeed == TRUE;
 }
 
 // fast loading/saving ---------------------------------------------------------
